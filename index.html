@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Solo Leveling – Interface améliorée</title>
+  <style>
+    /* ========== VARIABLES CSS (seront modifiées par JS) ========== */
+    :root {
+      --bg-primary: #0d0221;
+      --bg-secondary: #1a1a3e;
+      --border-color: #2a2a5e;
+      --text-color: #e0e0ff;
+      --accent-color: #00f0ff;
+      --gold-color: #ffd700;
+      --danger-color: #f44336;
+      --input-bg: #1c1c3b;
+      --tab-bg: #1a0a2e;
+    }
+
+    /* Thème clair */
+    body.light-mode {
+      --bg-primary: #f0f0ff;
+      --bg-secondary: #ffffff;
+      --border-color: #ccccdd;
+      --text-color: #1a1a2e;
+      --accent-color: #0066cc;
+      --gold-color: #cc8800;
+      --danger-color: #cc0000;
+      --input-bg: #ffffff;
+      --tab-bg: #e0e0ff;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg-primary);
+      font-family: 'Courier New', monospace;
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; padding: 20px; color: var(--text-color);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .screen {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--bg-primary); display: flex; flex-direction: column;
+      align-items: center; justify-content: center; z-index: 999;
+      padding: 20px;
+    }
+    .screen h1 { color: var(--accent-color); font-size: 28px; margin-bottom: 10px; text-shadow: 0 0 10px var(--accent-color); }
+    .screen .subtitle { color: var(--text-color); opacity: 0.7; margin-bottom: 30px; text-align: center; }
+    .screen label { color: var(--accent-color); display: block; margin-bottom: 5px; font-weight: bold; }
+    .screen input {
+      width: 100%; max-width: 300px; padding: 12px;
+      margin-bottom: 15px; background: var(--input-bg); border: 1px solid var(--border-color);
+      border-radius: 10px; color: var(--text-color); font-size: 16px; outline: none;
+    }
+    .screen input:focus { border-color: var(--accent-color); }
+    .screen button {
+      background: var(--accent-color); color: var(--bg-primary); border: none;
+      padding: 12px 30px; border-radius: 10px; font-weight: bold;
+      font-size: 18px; cursor: pointer; margin: 5px; width: 200px;
+    }
+    .screen button:active { opacity: 0.8; }
+    .screen .secondary-btn {
+      background: transparent; color: var(--accent-color); border: 1px solid var(--accent-color);
+      padding: 10px 20px; font-size: 14px;
+    }
+    .error-msg { color: #ff5555; font-size: 14px; margin-bottom: 10px; display: none; }
+
+    .app {
+      width: 100%; max-width: 420px;
+      background: var(--bg-primary); border: 2px solid var(--accent-color);
+      border-radius: 20px; overflow: hidden;
+      box-shadow: 0 0 20px var(--accent-color)55;
+      display: none;
+    }
+    .tabs { display: flex; background: var(--tab-bg); border-bottom: 1px solid var(--accent-color); }
+    .tab {
+      flex: 1; text-align: center; padding: 10px 0;
+      color: var(--text-color); opacity: 0.6; font-weight: bold; cursor: pointer; font-size: 11px;
+      border-bottom: 3px solid transparent; transition: 0.3s;
+    }
+    .tab.active { color: var(--accent-color); opacity: 1; border-bottom-color: var(--accent-color); }
+    .page { display: none; padding: 20px; }
+    .page.active { display: block; }
+
+    .header { text-align: center; margin-bottom: 20px; }
+    .name { font-size: 24px; color: var(--accent-color); font-weight: bold; text-shadow: 0 0 8px var(--accent-color); }
+    .age { font-size: 16px; color: var(--text-color); opacity: 0.7; margin-bottom: 10px; }
+    .level { font-size: 18px; margin-top: 4px; }
+
+    .xp-section { margin-bottom: 25px; }
+    .xp-text { font-size: 14px; color: var(--text-color); opacity: 0.7; margin-bottom: 5px; }
+    .xp-bar { height: 20px; background: var(--input-bg); border-radius: 10px; overflow: hidden; }
+    .xp-fill { height: 100%; background: linear-gradient(90deg, var(--accent-color), #0088ff); border-radius: 10px; width: 0%; transition: width 0.4s; }
+    .points { color: var(--gold-color); font-size: 15px; margin-top: 10px; text-align: center; }
+
+    .stat-row, .item-row, .leaderboard-row, .setting-row {
+      display: flex; align-items: center;
+      background: var(--bg-secondary); padding: 12px; border-radius: 10px;
+      margin-bottom: 8px; border: 1px solid var(--border-color);
+    }
+    .stat-label, .item-info, .leaderboard-info, .setting-info { flex: 1; }
+    .item-name, .leaderboard-name { font-size: 16px; color: var(--text-color); }
+    .item-desc, .leaderboard-stats { font-size: 13px; color: var(--text-color); opacity: 0.6; margin-top: 2px; }
+    .item-quantity, .leaderboard-level { color: var(--accent-color); font-weight: bold; margin-right: 10px; }
+    .stat-value { color: var(--accent-color); font-size: 18px; font-weight: bold; margin-right: 10px; }
+    .plus-btn, .use-btn, .ai-btn {
+      background: var(--accent-color)33; color: var(--accent-color); border: none;
+      font-size: 16px; padding: 6px 12px; border-radius: 8px;
+      cursor: pointer; font-weight: bold;
+    }
+    .use-btn:active, .plus-btn:active, .ai-btn:active { background: var(--accent-color)66; }
+
+    .quest-card {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg-secondary); padding: 12px; border-radius: 10px;
+      margin-bottom: 10px; border: 1px solid var(--border-color);
+    }
+    .quest-info { display: flex; flex-direction: column; }
+    .quest-title { font-size: 16px; color: var(--text-color); }
+    .quest-xp { font-size: 13px; color: var(--text-color); opacity: 0.6; }
+    .validate-btn {
+      background: var(--accent-color); color: var(--bg-primary);
+      padding: 8px 14px; border: none; border-radius: 8px;
+      font-weight: bold; cursor: pointer;
+    }
+    .validate-btn:active { opacity: 0.8; }
+
+    .timer-box {
+      text-align: center; margin-bottom: 15px;
+      background: var(--bg-secondary); padding: 8px; border-radius: 8px;
+      border: 1px solid var(--border-color); color: var(--gold-color); font-size: 16px;
+    }
+    .timer-box span { color: var(--accent-color); font-weight: bold; }
+
+    .quiz-box {
+      background: var(--bg-secondary); border: 1px solid var(--border-color);
+      border-radius: 10px; padding: 15px; margin-bottom: 20px;
+    }
+    .quiz-question { color: var(--accent-color); font-size: 16px; margin-bottom: 10px; }
+    .quiz-answers { display: flex; flex-direction: column; gap: 8px; }
+    .quiz-btn {
+      background: var(--border-color); color: var(--text-color); border: none;
+      padding: 10px; border-radius: 8px; cursor: pointer; text-align: left;
+      font-size: 14px; transition: 0.2s;
+    }
+    .quiz-btn:hover { background: var(--accent-color)33; }
+    .quiz-feedback { margin-top: 10px; font-weight: bold; }
+
+    .reset-btn, .export-btn, .import-btn {
+      margin-top: 15px; text-align: center;
+      background: var(--border-color); padding: 10px; border-radius: 8px;
+      cursor: pointer; color: var(--text-color);
+    }
+    .logout-btn {
+      margin-top: 5px; text-align: center;
+      background: var(--danger-color); padding: 8px; border-radius: 8px;
+      cursor: pointer; color: #fff; font-size: 12px;
+    }
+
+    /* Switch jour/nuit */
+    .switch {
+      position: relative; display: inline-block; width: 48px; height: 24px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--border-color); transition: .4s; border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+      background-color: var(--accent-color); transition: .4s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--accent-color); }
+    input:checked + .slider:before { transform: translateX(24px); }
+
+    .chat-container {
+      background: var(--bg-secondary); border-radius: 12px; padding: 15px;
+      margin-top: 20px; height: 200px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .chat-bubble {
+      max-width: 80%; padding: 8px 12px; border-radius: 12px;
+      font-size: 14px; line-height: 1.4;
+    }
+    .user-bubble { align-self: flex-end; background: var(--accent-color)33; color: var(--text-color); }
+    .ai-bubble { align-self: flex-start; background: var(--border-color); color: var(--accent-color); }
+    .chat-input-area { display: flex; margin-top: 10px; gap: 5px; }
+    .chat-input {
+      flex: 1; background: var(--input-bg); border: 1px solid var(--border-color);
+      color: var(--text-color); padding: 10px; border-radius: 8px; outline: none;
+    }
+    .send-btn {
+      background: var(--accent-color); color: var(--bg-primary); border: none;
+      border-radius: 8px; padding: 10px 15px; font-weight: bold;
+    }
+
+    .toast {
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      background: var(--accent-color)dd; color: var(--bg-primary); padding: 10px 20px;
+      border-radius: 20px; font-weight: bold; font-size: 14px;
+      opacity: 0; transition: opacity 0.3s; z-index: 9999; pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+
+    /* Input color personnalisé */
+    input[type="color"] {
+      width: 40px; height: 40px; border: 1px solid var(--border-color);
+      border-radius: 8px; background: var(--input-bg); cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Écran d'authentification -->
+<div class="screen" id="auth-screen">
+  <h1>⚔️ Système activé</h1>
+  <p class="subtitle" id="auth-subtitle">Connectez-vous ou créez un compte</p>
+  <div id="auth-fields"></div>
+  <div class="error-msg" id="auth-error"></div>
+  <button id="auth-action-btn">Se connecter</button>
+  <button class="secondary-btn" id="auth-switch-btn">Créer un compte</button>
+</div>
+
+<!-- Application principale -->
+<div class="app" id="main-app">
+  <div class="tabs">
+    <div class="tab active" id="tab-stat">📋 Statut</div>
+    <div class="tab" id="tab-quest">⚔️ Quêtes</div>
+    <div class="tab" id="tab-inventory">🎒 Inventaire</div>
+    <div class="tab" id="tab-ai">🧠 IA</div>
+    <div class="tab" id="tab-leaderboard">🏆</div>
+    <div class="tab" id="tab-settings">⚙️</div>
+  </div>
+
+  <!-- PAGE STATUT -->
+  <div class="page active" id="page-stat">
+    <div class="header">
+      <div class="name" id="player-name">Hunter</div>
+      <div class="age" id="player-age">20 ans</div>
+      <div class="level">Niveau <span id="level">1</span></div>
+    </div>
+    <div class="xp-section">
+      <div class="xp-text">XP <span id="xp">0</span> / <span id="xp-to-next">100</span></div>
+      <div class="xp-bar"><div class="xp-fill" id="xp-fill"></div></div>
+      <div class="points" id="points-msg" style="display:none;">⭐ <span id="points-val">0</span> point(s) disponible(s)</div>
+    </div>
+    <div id="stats-container"></div>
+    <div class="export-btn" id="export-data">💾 Sauvegarder mes données (export)</div>
+    <div class="import-btn" id="import-data">📂 Restaurer une sauvegarde (import)</div>
+    <input type="file" id="import-file" style="display:none">
+    <div class="reset-btn" id="reset-quests">🔄 Nouvelles quêtes (debug)</div>
+    <div class="logout-btn" id="logout-btn">🚪 Déconnexion</div>
+  </div>
+
+  <!-- PAGE QUETES -->
+  <div class="page" id="page-quest">
+    <div class="timer-box" id="daily-timer">
+      ⏳ Reset dans : <span id="timer-countdown">--:--:--</span>
+    </div>
+    <div id="quests-container"></div>
+    <div style="text-align:center; margin-top:10px; color:var(--text-color); opacity:0.7; font-size:13px;" id="quest-day-info"></div>
+  </div>
+
+  <!-- PAGE INVENTAIRE + QUIZ -->
+  <div class="page" id="page-inventory">
+    <div class="quiz-box" id="quiz-box">
+      <div class="quiz-question" id="quiz-question">Chargement...</div>
+      <div class="quiz-answers" id="quiz-answers"></div>
+      <div class="quiz-feedback" id="quiz-feedback"></div>
+    </div>
+    <div id="inventory-container"></div>
+    <div style="margin-top:20px; text-align:center; color:var(--text-color); opacity:0.7; font-size:14px;">
+      Utilise un objet pour obtenir son effet.
+    </div>
+  </div>
+
+  <!-- PAGE IA -->
+  <div class="page" id="page-ai">
+    <h3 style="color:var(--accent-color); margin-bottom:15px;">Assistant IA du Système</h3>
+    <div id="ai-advice" style="background:var(--bg-secondary); border-radius:10px; padding:12px; margin-bottom:15px; border:1px solid var(--border-color);"></div>
+    <button class="ai-btn" id="auto-distribute-btn" style="width:100%; margin-bottom:15px;">
+      ⚡ Auto-distribuer mes points (IA)
+    </button>
+    <div class="chat-container" id="chat-container">
+      <div class="ai-bubble chat-bubble">Système : Bonjour, <span id="ai-chat-name">Chasseur</span>.</div>
+    </div>
+    <div class="chat-input-area">
+      <input type="text" class="chat-input" id="chat-input" placeholder="Par ex: Quelle stat améliorer ?">
+      <button class="send-btn" id="chat-send">➤</button>
+    </div>
+  </div>
+
+  <!-- PAGE CLASSEMENT -->
+  <div class="page" id="page-leaderboard">
+    <h3 style="color:var(--accent-color); margin-bottom:15px;">🏆 Classement des Chasseurs</h3>
+    <div id="leaderboard-container"></div>
+  </div>
+
+  <!-- PAGE PARAMÈTRES (NOUVEAU) -->
+  <div class="page" id="page-settings">
+    <h3 style="color:var(--accent-color); margin-bottom:15px;">⚙️ Personnalisation</h3>
+    <div class="setting-row">
+      <div class="setting-info">
+        <div style="font-size:16px; color:var(--text-color);">Mode Nuit / Jour</div>
+        <div style="font-size:13px; color:var(--text-color); opacity:0.6;">Basculer l'apparence</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="theme-toggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="setting-row">
+      <div class="setting-info">
+        <div style="font-size:16px; color:var(--text-color);">Couleur de fond personnalisée</div>
+        <div style="font-size:13px; color:var(--text-color); opacity:0.6;">Laisser vide pour utiliser le thème par défaut</div>
+      </div>
+      <input type="color" id="bg-color-picker" value="#0d0221">
+      <button class="use-btn" id="reset-color-btn" style="margin-left:8px;">Réinit.</button>
+    </div>
+    <div class="setting-row" style="margin-top:20px;">
+      <button class="ai-btn" id="save-settings-btn" style="width:100%;">💾 Appliquer et sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  // ========== INDEXEDDB ==========
+  const DB_NAME = 'SoloLevelingDB';
+  const DB_VERSION = 1;
+  let db;
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains('users')) {
+          db.createObjectStore('users', { keyPath: 'username' });
+        }
+      };
+      request.onsuccess = (event) => {
+        db = event.target.result;
+        resolve(db);
+      };
+      request.onerror = (event) => reject(event.target.error);
+    });
+  }
+
+  async function dbPut(username, data) {
+    if (!db) await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('users', 'readwrite');
+      const store = tx.objectStore('users');
+      const req = store.put({ username, ...data });
+      req.onsuccess = () => resolve();
+      req.onerror = (e) => reject(e);
+    });
+  }
+
+  async function dbGet(username) {
+    if (!db) await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('users', 'readonly');
+      const store = tx.objectStore('users');
+      const req = store.get(username);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = (e) => reject(e);
+    });
+  }
+
+  async function dbGetAllUsers() {
+    if (!db) await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('users', 'readonly');
+      const store = tx.objectStore('users');
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = (e) => reject(e);
+    });
+  }
+
+  async function migrateFromLocalStorage() {
+    const oldUsers = JSON.parse(localStorage.getItem('solo_users_list') || '[]');
+    for (const username of oldUsers) {
+      const authData = JSON.parse(localStorage.getItem('solo_user_auth_' + username) || 'null');
+      const gameData = JSON.parse(localStorage.getItem('solo_user_data_' + username) || 'null');
+      if (authData && gameData) {
+        await dbPut(username, { auth: authData, game: gameData });
+      }
+    }
+    localStorage.removeItem('solo_users_list');
+    for (const username of oldUsers) {
+      localStorage.removeItem('solo_user_auth_' + username);
+      localStorage.removeItem('solo_user_data_' + username);
+    }
+  }
+
+  // ========== HASH PASSWORD ==========
+  async function hashPassword(password) {
+    const msgUint8 = new TextEncoder().encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+  }
+
+  // ========== UTILISATEUR COURANT ==========
+  let currentUser = { username: null, auth: null, game: null };
+
+  async function loadActiveSession() {
+    const activeUser = localStorage.getItem('solo_active_user');
+    if (activeUser) {
+      const user = await dbGet(activeUser);
+      if (user) {
+        currentUser.username = activeUser;
+        currentUser.auth = user.auth;
+        currentUser.game = user.game;
+        applyUserTheme(); // appliquer le thème sauvegardé
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function setActiveSession(username) {
+    localStorage.setItem('solo_active_user', username);
+    currentUser.username = username;
+  }
+
+  async function clearActiveSession() {
+    localStorage.removeItem('solo_active_user');
+    currentUser.username = null;
+    currentUser.auth = null;
+    currentUser.game = null;
+  }
+
+  function game() { return currentUser.game; }
+
+  async function saveCurrentGame() {
+    if (currentUser.username && currentUser.game) {
+      await dbPut(currentUser.username, { auth: currentUser.auth, game: currentUser.game });
+    }
+  }
+
+  // ========== THÈME (NOUVEAU) ==========
+  function applyUserTheme() {
+    if (!currentUser.game) return;
+    const theme = currentUser.game.theme || 'dark';
+    const customColor = currentUser.game.customColor || null;
+
+    if (theme === 'light') {
+      document.body.classList.add('light-mode');
+    } else {
+      document.body.classList.remove('light-mode');
+    }
+
+    if (customColor) {
+      document.documentElement.style.setProperty('--bg-primary', customColor);
+      // Ajuster la couleur secondaire automatiquement (un peu plus claire)
+      document.documentElement.style.setProperty('--bg-secondary', lightenColor(customColor, 15));
+    } else {
+      document.documentElement.style.removeProperty('--bg-primary');
+      document.documentElement.style.removeProperty('--bg-secondary');
+    }
+
+    // Mettre à jour l'interface des paramètres (si on est dessus)
+    const toggle = document.getElementById('theme-toggle');
+    if (toggle) toggle.checked = (theme === 'light');
+    const picker = document.getElementById('bg-color-picker');
+    if (picker) picker.value = customColor || '#0d0221';
+  }
+
+  // Fonction utilitaire pour éclaircir une couleur hex
+  function lightenColor(hex, percent) {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = Math.min(255, (num >> 16) + amt);
+    const G = Math.min(255, ((num >> 8) & 0x00FF) + amt);
+    const B = Math.min(255, (num & 0x0000FF) + amt);
+    return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
+  }
+
+  // ========== AUTHENTIFICATION ==========
+  const authScreen = document.getElementById('auth-screen');
+  const mainApp = document.getElementById('main-app');
+  const authFields = document.getElementById('auth-fields');
+  const authError = document.getElementById('auth-error');
+  const authActionBtn = document.getElementById('auth-action-btn');
+  const authSwitchBtn = document.getElementById('auth-switch-btn');
+  const authSubtitle = document.getElementById('auth-subtitle');
+
+  let authMode = 'login';
+
+  function renderAuthFields() {
+    authFields.innerHTML = '';
+    if (authMode === 'login') {
+      authFields.innerHTML = `
+        <label>Nom d'utilisateur</label>
+        <input type="text" id="auth-username" placeholder="Votre identifiant" maxlength="20">
+        <label>Mot de passe</label>
+        <input type="password" id="auth-password" placeholder="Votre mot de passe" maxlength="20">
+      `;
+      authActionBtn.textContent = 'Se connecter';
+      authSubtitle.textContent = 'Connectez-vous à votre compte';
+      authSwitchBtn.textContent = 'Créer un compte';
+    } else {
+      authFields.innerHTML = `
+        <label>Nom complet</label>
+        <input type="text" id="auth-name" placeholder="Votre nom" maxlength="20">
+        <label>Âge</label>
+        <input type="number" id="auth-age" placeholder="Votre âge" min="1" max="150">
+        <label>Nom d'utilisateur</label>
+        <input type="text" id="auth-username" placeholder="Choisissez un identifiant" maxlength="20">
+        <label>Mot de passe</label>
+        <input type="password" id="auth-password" placeholder="Choisissez un mot de passe" maxlength="20">
+      `;
+      authActionBtn.textContent = 'Créer le compte';
+      authSubtitle.textContent = 'Rejoignez le Système';
+      authSwitchBtn.textContent = 'J\'ai déjà un compte';
+    }
+    authError.style.display = 'none';
+  }
+
+  authSwitchBtn.addEventListener('click', () => { authMode = (authMode === 'login') ? 'register' : 'login'; renderAuthFields(); });
+
+  authActionBtn.addEventListener('click', async () => {
+    authError.style.display = 'none';
+    if (authMode === 'login') {
+      const username = document.getElementById('auth-username')?.value.trim();
+      const password = document.getElementById('auth-password')?.value;
+      if (!username || !password) { authError.textContent = 'Champs requis.'; authError.style.display = 'block'; return; }
+      const user = await dbGet(username);
+      if (!user || !user.auth) { authError.textContent = 'Identifiant incorrect.'; authError.style.display = 'block'; return; }
+      const hashedInput = await hashPassword(password);
+      if (user.auth.password !== hashedInput) { authError.textContent = 'Mot de passe incorrect.'; authError.style.display = 'block'; return; }
+      await loginUser(username);
+    } else {
+      const name = document.getElementById('auth-name')?.value.trim();
+      const age = parseInt(document.getElementById('auth-age')?.value);
+      const username = document.getElementById('auth-username')?.value.trim();
+      const password = document.getElementById('auth-password')?.value;
+      if (!name || isNaN(age) || age <= 0 || !username || !password) { authError.textContent = 'Champs invalides.'; authError.style.display = 'block'; return; }
+      const exists = await dbGet(username);
+      if (exists) { authError.textContent = 'Cet utilisateur existe déjà.'; authError.style.display = 'block'; return; }
+      const hashedPwd = await hashPassword(password);
+      const authData = { password: hashedPwd, name, age, inscriptionDate: new Date().toISOString().split('T')[0] };
+      const defaultGameData = {
+        level: 1, xp: 0, xpToNext: 100, pointsToDistribute: 0,
+        force: 10, intelligence: 10, agility: 10, vitality: 10, perception: 10,
+        quests: [],
+        inventory: [
+          { id: 'pot_str', name: 'Potion de Force', desc: '+2 Force', effect: { stat: 'force', value: 2 }, quantity: 2 },
+          { id: 'pot_int', name: 'Parchemin d\'Intelligence', desc: '+3 Intelligence', effect: { stat: 'intelligence', value: 3 }, quantity: 1 },
+          { id: 'exp_book', name: 'Livre d\'entraînement', desc: '+50 XP', effect: { xp: 50 }, quantity: 1 },
+          { id: 'vital_herb', name: 'Herbe de Vitalité', desc: '+1 Vitalité', effect: { stat: 'vitality', value: 1 }, quantity: 3 }
+        ],
+        lastQuestDate: null, lastQuizDate: null, quizAnsweredToday: false, currentQuiz: null,
+        theme: 'dark', customColor: null   // thème par défaut
+      };
+      await dbPut(username, { auth: authData, game: defaultGameData });
+      await loginUser(username);
+    }
+  });
+
+  async function loginUser(username) {
+    setActiveSession(username);
+    const user = await dbGet(username);
+    currentUser.auth = user.auth;
+    currentUser.game = user.game;
+    // S'assurer que les propriétés de thème existent (migration)
+    if (currentUser.game.theme === undefined) currentUser.game.theme = 'dark';
+    if (currentUser.game.customColor === undefined) currentUser.game.customColor = null;
+    applyUserTheme();
+    checkAndGenerateQuests();
+    authScreen.style.display = 'none';
+    mainApp.style.display = 'block';
+    refreshUI();
+  }
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    if (confirm('Se déconnecter ?')) {
+      await saveCurrentGame();
+      await clearActiveSession();
+      mainApp.style.display = 'none';
+      authScreen.style.display = 'flex';
+      renderAuthFields();
+    }
+  });
+
+  // ========== EXPORT/IMPORT ==========
+  document.getElementById('export-data').addEventListener('click', async () => {
+    if (!currentUser.username) return;
+    await saveCurrentGame();
+    const exportObj = { username: currentUser.username, auth: currentUser.auth, game: currentUser.game };
+    const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `solo_leveling_save_${currentUser.username}.json`; a.click();
+    URL.revokeObjectURL(url);
+    showToast('💾 Sauvegarde exportée.');
+  });
+
+  document.getElementById('import-data').addEventListener('click', () => document.getElementById('import-file').click());
+  document.getElementById('import-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const imported = JSON.parse(text);
+      if (!imported.username || !imported.auth || !imported.game) throw new Error('Format invalide');
+      const existing = await dbGet(imported.username);
+      if (existing && existing.username !== currentUser.username) {
+        if (!confirm(`L'utilisateur "${imported.username}" existe. Écraser ?`)) return;
+      }
+      await dbPut(imported.username, { auth: imported.auth, game: imported.game });
+      if (imported.username === currentUser.username) {
+        currentUser.auth = imported.auth; currentUser.game = imported.game;
+        applyUserTheme(); refreshUI();
+      }
+      showToast('📂 Sauvegarde restaurée.');
+    } catch (err) { alert('Fichier invalide.'); }
+    e.target.value = '';
+  });
+
+  // ========== PARAMÈTRES (NOUVEAU) ==========
+  document.getElementById('save-settings-btn').addEventListener('click', async () => {
+    if (!currentUser.game) return;
+    const themeToggle = document.getElementById('theme-toggle');
+    const colorPicker = document.getElementById('bg-color-picker');
+    currentUser.game.theme = themeToggle.checked ? 'light' : 'dark';
+    currentUser.game.customColor = colorPicker.value !== '#0d0221' ? colorPicker.value : null;
+    await saveCurrentGame();
+    applyUserTheme();
+    showToast('⚙️ Préférences enregistrées.');
+  });
+
+  document.getElementById('reset-color-btn').addEventListener('click', () => {
+    document.getElementById('bg-color-picker').value = '#0d0221';
+  });
+
+  // ========== TOAST ==========
+  function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message; toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+  }
+
+  // ========== GÉNÉRATEUR DE QUÊTES (inchangé) ==========
+  const bookTitles = [
+    "L'Ombre du Chasseur", "Le Grimoire des Anciens", "Solo Leveling Tome 1",
+    "L'Art de la Guerre", "Méditations", "Le Pouvoir du Maintenant",
+    "Réfléchissez et devenez riche", "Le Guide du Ranger", "L'Éveil du Héros",
+    "Les Secrets du Donjon", "Légendes d'Aria", "La Voie du Guerrier"
+  ];
+
+  function generateDailyQuests(level, count = 4) {
+    const quests = [];
+    const today = new Date().toISOString().split('T')[0];
+    const seed = today + level + Math.random();
+    function seededRandom(seed) {
+      let hash = 0;
+      for (let i = 0; i < seed.length; i++) { hash = ((hash << 5) - hash) + seed.charCodeAt(i); hash |= 0; }
+      return function() { hash = (hash * 9301 + 49297) % 233280; return hash / 233280; };
+    }
+    const random = seededRandom(seed);
+    const questTypes = [
+      { title: () => `Lire "${bookTitles[Math.floor(random() * bookTitles.length)]}" (${10 + level * 2} pages)`, xp: () => 10 + level * 2 },
+      { title: () => `Marcher ${200 + level * 50} mètres`, xp: () => 5 + level },
+      { title: () => `Faire ${10 + level * 5} pompes`, xp: () => 8 + level * 2 },
+      { title: () => `Méditer ${5 + level} minutes`, xp: () => 6 + level },
+      { title: () => `Faire ${15 + level * 8} squats`, xp: () => 8 + level * 2 },
+      { title: () => `Écrire un journal de ${50 + level * 20} mots`, xp: () => 7 + level * 2 },
+      { title: () => "Boire 2 litres d'eau", xp: () => 3 + Math.floor(level / 2) },
+      { title: () => `Étirement / yoga ${10 + level * 2} min`, xp: () => 5 + level }
+    ];
+    const usedIndices = new Set();
+    while (quests.length < count) {
+      const idx = Math.floor(random() * questTypes.length);
+      if (!usedIndices.has(idx)) {
+        usedIndices.add(idx);
+        const q = questTypes[idx];
+        quests.push({ id: `q_${today}_${idx}_${Date.now()}_${Math.random()}`, title: q.title(), xpReward: q.xp(), done: false });
+      }
+    }
+    return quests;
+  }
+
+  function generateSingleQuest(level) {
+    const today = new Date().toISOString().split('T')[0];
+    const seed = today + level + Date.now();
+    const random = (() => {
+      let h = 0; for (let i = 0; i < seed.length; i++) h = ((h << 5) - h) + seed.charCodeAt(i);
+      return () => { h = (h * 9301 + 49297) % 233280; return h / 233280; };
+    })();
+    const questTypes = [
+      { title: () => `Lire "${bookTitles[Math.floor(random() * bookTitles.length)]}" (${10 + level * 2} pages)`, xp: () => 10 + level * 2 },
+      { title: () => `Marcher ${200 + level * 50} mètres`, xp: () => 5 + level },
+      { title: () => `Faire ${10 + level * 5} pompes`, xp: () => 8 + level * 2 },
+      { title: () => `Méditer ${5 + level} minutes`, xp: () => 6 + level },
+      { title: () => `Faire ${15 + level * 8} squats`, xp: () => 8 + level * 2 },
+      { title: () => `Écrire un journal de ${50 + level * 20} mots`, xp: () => 7 + level * 2 },
+      { title: () => "Boire 2 litres d'eau", xp: () => 3 + Math.floor(level / 2) },
+      { title: () => `Étirement / yoga ${10 + level * 2} min`, xp: () => 5 + level }
+    ];
+    const idx = Math.floor(random() * questTypes.length);
+    const q = questTypes[idx];
+    return { id: `q_${today}_${idx}_${Date.now()}_${Math.random()}`, title: q.title(), xpReward: q.xp(), done: false };
+  }
+
+  function checkAndGenerateQuests() {
+    if (!game()) return;
+    const today = new Date().toISOString().split('T')[0];
+    if (game().lastQuestDate !== today || !game().quests || game().quests.length === 0) {
+      game().quests = generateDailyQuests(game().level, 4);
+      game().lastQuestDate = today;
+      saveCurrentGame();
+    }
+  }
+
+  // ========== TIMER ==========
+  function updateDailyTimer() {
+    const now = new Date();
+    const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1); tomorrow.setHours(0,0,0,0);
+    const diff = tomorrow - now;
+    if (diff <= 0) { if (game()) { checkAndGenerateQuests(); refreshUI(); } return; }
+    const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
+    document.getElementById('timer-countdown').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  setInterval(() => {
+    if (currentUser.username && game()) {
+      updateDailyTimer();
+      const today = new Date().toISOString().split('T')[0];
+      if (game().lastQuestDate !== today) { checkAndGenerateQuests(); refreshUI(); }
+      if (game().lastQuizDate !== today) { game().quizAnsweredToday = false; game().lastQuizDate = today; saveCurrentGame(); if (document.getElementById('page-inventory').classList.contains('active')) refreshQuizUI(); }
+    }
+  }, 1000);
+
+  // ========== QUÊTES ==========
+  function completeQuest(questId) {
+    if (!game()) return;
+    const idx = game().quests.findIndex(q => q.id === questId);
+    if (idx === -1 || game().quests[idx].done) return;
+    const quest = game().quests[idx]; game().quests.splice(idx, 1);
+    game().quests.push(generateSingleQuest(game().level));
+    addXp(quest.xpReward); showToast(`✅ +${quest.xpReward} XP`); saveCurrentGame(); refreshUI();
+  }
+
+  function resetDailyQuests() {
+    if (!game()) return; game().lastQuestDate = null; checkAndGenerateQuests(); refreshUI(); showToast('🔄 Quêtes régénérées.');
+  }
+
+  function addXp(amount) {
+    game().xp += amount;
+    while (game().xp >= game().xpToNext) { game().xp -= game().xpToNext; game().level++; game().xpToNext = Math.floor(game().xpToNext * 1.2); game().pointsToDistribute += 5; }
+    saveCurrentGame(); refreshUI();
+  }
+
+  function increaseStat(stat) {
+    if (!game() || game().pointsToDistribute <= 0) return;
+    game()[stat]++; game().pointsToDistribute--; saveCurrentGame(); refreshUI();
+  }
+
+  // ========== INVENTAIRE & QUIZ ==========
+  function addItemToInventory(item) {
+    if (!game()) return;
+    const existing = game().inventory.find(i => i.id === item.id);
+    if (existing) existing.quantity += item.quantity || 1;
+    else game().inventory.push({ ...item, quantity: item.quantity || 1 });
+    saveCurrentGame();
+  }
+
+  function useItem(itemId) {
+    if (!game()) return;
+    const item = game().inventory.find(i => i.id === itemId);
+    if (!item || item.quantity <= 0) return;
+    if (item.effect.stat) { game()[item.effect.stat] += item.effect.value; showToast(`⬆️ ${item.name} +${item.effect.value}`); }
+    else if (item.effect.xp) { showToast(`📖 ${item.name} +${item.effect.xp} XP`); addXp(item.effect.xp); }
+    item.quantity--;
+    if (item.quantity <= 0) game().inventory = game().inventory.filter(i => i.id !== itemId);
+    saveCurrentGame(); refreshUI();
+  }
+
+  const quizPool = [
+    { question: "Dans Solo Leveling, quel est le nom du protagoniste ?", answers: ["Sung Jin-Woo", "Goku", "Naruto", "Eren"], correct: 0 },
+    { question: "Combien de minutes de méditation sont recommandées pour les débutants ?", answers: ["5-10 min", "1 heure", "30 min", "2 heures"], correct: 0 },
+    { question: "Quelle vitamine est produite par l'exposition au soleil ?", answers: ["Vitamine C", "Vitamine D", "Vitamine B12", "Vitamine A"], correct: 1 },
+    { question: "Que signifie le terme 'Solo Leveling' ?", answers: ["Monter de niveau seul", "Jouer en équipe", "Un manga", "Un sport"], correct: 0 },
+    { question: "Quel exercice travaille principalement les pectoraux ?", answers: ["Squat", "Pompes", "Deadlift", "Fentes"], correct: 1 },
+    { question: "Combien de pages lire par jour est un bon objectif ?", answers: ["5 pages", "20 pages", "100 pages", "500 pages"], correct: 1 }
+  ];
+
+  const rewardItems = [
+    { id: 'pot_str', name: 'Potion de Force', desc: '+2 Force', effect: { stat: 'force', value: 2 }, quantity: 1 },
+    { id: 'pot_int', name: 'Parchemin d\'Intelligence', desc: '+3 Intelligence', effect: { stat: 'intelligence', value: 3 }, quantity: 1 },
+    { id: 'exp_book', name: 'Livre d\'entraînement', desc: '+50 XP', effect: { xp: 50 }, quantity: 1 },
+    { id: 'vital_herb', name: 'Herbe de Vitalité', desc: '+1 Vitalité', effect: { stat: 'vitality', value: 1 }, quantity: 1 },
+    { id: 'agi_elixir', name: 'Élixir d\'Agilité', desc: '+2 Agilité', effect: { stat: 'agility', value: 2 }, quantity: 1 },
+    { id: 'perc_scroll', name: 'Parchemin de Perception', desc: '+2 Perception', effect: { stat: 'perception', value: 2 }, quantity: 1 }
+  ];
+
+  function loadDailyQuiz() {
+    if (!game()) return null;
+    const today = new Date().toISOString().split('T')[0];
+    let hash = 0; for (let i = 0; i < today.length; i++) hash = ((hash << 5) - hash) + today.charCodeAt(i);
+    const index = Math.abs(hash) % quizPool.length;
+    game().currentQuiz = { ...quizPool[index] };
+    return game().currentQuiz;
+  }
+
+  function refreshQuizUI() {
+    if (!game()) return;
+    const quizBox = document.getElementById('quiz-box'); if (!quizBox) return;
+    const today = new Date().toISOString().split('T')[0];
+    const alreadyAnswered = game().quizAnsweredToday && game().lastQuizDate === today;
+    const questionEl = document.getElementById('quiz-question');
+    const answersEl = document.getElementById('quiz-answers');
+    const feedbackEl = document.getElementById('quiz-feedback');
+    if (alreadyAnswered) { questionEl.textContent = "✅ Quiz déjà réussi. Revenez demain."; answersEl.innerHTML = ''; feedbackEl.textContent = ''; return; }
+    const quiz = game().currentQuiz || loadDailyQuiz();
+    questionEl.textContent = "❓ " + quiz.question;
+    answersEl.innerHTML = '';
+    quiz.answers.forEach((answer, idx) => {
+      const btn = document.createElement('button'); btn.className = 'quiz-btn'; btn.textContent = answer;
+      btn.addEventListener('click', () => handleQuizAnswer(idx));
+      answersEl.appendChild(btn);
+    });
+    feedbackEl.textContent = '';
+  }
+
+  function handleQuizAnswer(chosenIndex) {
+    if (!game()) return;
+    const today = new Date().toISOString().split('T')[0];
+    if (game().quizAnsweredToday && game().lastQuizDate === today) { showToast('Déjà répondu.'); return; }
+    const quiz = game().currentQuiz; if (!quiz) return;
+    const isCorrect = (chosenIndex === quiz.correct);
+    const feedbackEl = document.getElementById('quiz-feedback');
+    document.querySelectorAll('.quiz-btn').forEach(btn => btn.disabled = true);
+    if (isCorrect) { feedbackEl.textContent = '🎉 Bonne réponse !'; addItemToInventory(rewardItems[Math.floor(Math.random() * rewardItems.length)]); showToast('🏆 Objet reçu !'); }
+    else { feedbackEl.textContent = '❌ Mauvaise réponse.'; }
+    game().quizAnsweredToday = true; game().lastQuizDate = today; saveCurrentGame(); refreshUI();
+  }
+
+  // ========== IA ==========
+  function analyzeBuild() {
+    if (!game()) return { stat: 'force', name: 'Force' };
+    const age = currentUser.auth.age;
+    const totalStats = game().force + game().intelligence + game().agility + game().vitality + game().perception;
+    const avg = totalStats / 5;
+    let focus = age < 20 ? ['force','agility'] : age < 30 ? ['force','vitality'] : ['intelligence','vitality','perception'];
+    let recommended = focus[0]; let minVal = game()[focus[0]];
+    focus.forEach(stat => { if (game()[stat] < minVal) { minVal = game()[stat]; recommended = stat; } });
+    if (minVal > avg) { const all = ['force','intelligence','agility','vitality','perception']; recommended = all.reduce((a,b) => game()[a] < game()[b] ? a : b); }
+    const names = { force:'Force', intelligence:'Intelligence', agility:'Agilité', vitality:'Vitalité', perception:'Perception' };
+    return { stat: recommended, name: names[recommended] };
+  }
+
+  function getAiAdviceText() {
+    if (!game()) return ''; const b = analyzeBuild();
+    let a = `🧠 Analyse :\nNiv.${game().level} • ${currentUser.auth.age} ans\nRecomm. : ${b.name}\n`;
+    a += game().pointsToDistribute > 0 ? `⭐ ${game().pointsToDistribute} pts → ${b.name}\n` : 'Aucun pt.\n';
+    a += `📊 F-${game().force} I-${game().intelligence} A-${game().agility} V-${game().vitality} P-${game().perception}`;
+    return a;
+  }
+
+  function autoDistribute() {
+    if (!game() || game().pointsToDistribute <= 0) { showToast('Aucun point.'); return; }
+    const b = analyzeBuild(); game()[b.stat] += game().pointsToDistribute; const pts = game().pointsToDistribute; game().pointsToDistribute = 0;
+    saveCurrentGame(); refreshUI(); showToast(`🤖 ${pts} pts en ${b.name}`); updateAiChat(`Système : ${pts} pts alloués en ${b.name}.`);
+  }
+
+  function processAiMessage(msg) {
+    if (!game()) return '';
+    msg = msg.toLowerCase();
+    if (msg.includes('stat')||msg.includes('améliorer')) { const b=analyzeBuild(); return `Recommandé : ${b.name}. ${game().pointsToDistribute} pts dispo.`; }
+    if (msg.includes('niveau')) return `Niv.${game().level}, ${game().xpToNext - game().xp} XP pour niv.${game().level+1}.`;
+    if (msg.includes('quête')) return `Encore ${game().quests.filter(q=>!q.done).length} quête(s).`;
+    const map={force:'Force',intelligence:'Intelligence',agility:'Agilité',vitality:'Vitalité',perception:'Perception'};
+    for (let [k,v] of Object.entries(map)) if (msg.includes(k)) return `${v} : ${game()[k]}.`;
+    if (msg.includes('âge')) return `${currentUser.auth.age} ans.`;
+    if (msg.includes('inventaire')) return `${game().inventory.reduce((s,i)=>s+i.quantity,0)} objet(s).`;
+    return "Posez une question sur vos stats, quêtes, etc.";
+  }
+
+  function updateAiChat(message, sender='ai') {
+    const container = document.getElementById('chat-container');
+    if (!container) return;
+    const bubble = document.createElement('div');
+    bubble.className = sender==='user' ? 'user-bubble chat-bubble' : 'ai-bubble chat-bubble';
+    bubble.textContent = (sender==='user'?'Vous : ':'') + message;
+    container.appendChild(bubble); container.scrollTop = container.scrollHeight;
+  }
+
+  function refreshAI() {
+    if (!game()) return;
+    document.getElementById('ai-advice').innerText = getAiAdviceText();
+    document.getElementById('ai-chat-name').textContent = currentUser.auth.name || 'Chasseur';
+  }
+
+  // ========== CLASSEMENT ==========
+  async function refreshLeaderboard() {
+    const container = document.getElementById('leaderboard-container');
+    if (!container) return; container.innerHTML = '';
+    const users = await dbGetAllUsers();
+    const players = users.map(u => ({
+      username: u.username, name: u.auth.name, level: u.game.level,
+      totalStats: u.game.force+u.game.intelligence+u.game.agility+u.game.vitality+u.game.perception, xp: u.game.xp
+    }));
+    players.sort((a,b) => b.level - a.level || b.totalStats - a.totalStats);
+    if (players.length===0) { container.innerHTML = '<div style="text-align:center;opacity:0.7;">Aucun joueur.</div>'; return; }
+    players.forEach((p,i) => {
+      const row = document.createElement('div'); row.className = 'leaderboard-row';
+      let rank = i+1, icon = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':`#${rank}`;
+      row.innerHTML = `<div class="leaderboard-info"><div class="leaderboard-name">${icon} ${p.name} (@${p.username})</div><div class="leaderboard-stats">Niv.${p.level} • Stats ${p.totalStats}</div></div><div class="leaderboard-level">${p.xp} XP</div>`;
+      container.appendChild(row);
+    });
+  }
+
+  // ========== AFFICHAGE GLOBAL ==========
+  const statsLabels = {
+    force: '💪 Force', intelligence: '🧠 Intelligence', agility: '🏃 Agilité', vitality: '❤️ Vitalité', perception: '👁️ Perception'
+  };
+
+  function refreshUI() {
+    if (!currentUser.username || !game()) return;
+    document.getElementById('player-name').textContent = currentUser.auth.name;
+    document.getElementById('player-age').textContent = currentUser.auth.age ? `${currentUser.auth.age} ans` : '';
+    document.getElementById('level').textContent = game().level;
+    document.getElementById('xp').textContent = game().xp;
+    document.getElementById('xp-to-next').textContent = game().xpToNext;
+    document.getElementById('xp-fill').style.width = Math.min(100, Math.floor((game().xp / game().xpToNext) * 100)) + '%';
+
+    const pointsMsg = document.getElementById('points-msg');
+    if (game().pointsToDistribute > 0) { pointsMsg.style.display = 'block'; document.getElementById('points-val').textContent = game().pointsToDistribute; }
+    else pointsMsg.style.display = 'none';
+
+    const statsContainer = document.getElementById('stats-container');
+    statsContainer.innerHTML = '';
+    for (let [key, label] of Object.entries(statsLabels)) {
+      const row = document.createElement('div'); row.className = 'stat-row';
+      row.innerHTML = `<span class="stat-label">${label}</span><span class="stat-value">${game()[key]}</span>${game().pointsToDistribute > 0 ? '<button class="plus-btn">+</button>' : ''}`;
+      if (game().pointsToDistribute > 0) row.querySelector('.plus-btn').addEventListener('click', () => increaseStat(key));
+      statsContainer.appendChild(row);
+    }
+
+    const questsContainer = document.getElementById('quests-container'); questsContainer.innerHTML = '';
+    if (!game().quests || game().quests.length === 0) questsContainer.innerHTML = '<div style="text-align:center;opacity:0.7;">Aucune quête.</div>';
+    else game().quests.forEach(q => {
+      const card = document.createElement('div'); card.className = 'quest-card';
+      card.innerHTML = `<div class="quest-info"><span class="quest-title">${q.title}</span><span class="quest-xp">+${q.xpReward} XP</span></div><button class="validate-btn">Valider</button>`;
+      card.querySelector('.validate-btn').addEventListener('click', () => completeQuest(q.id));
+      questsContainer.appendChild(card);
+    });
+
+    const dayInfo = document.getElementById('quest-day-info');
+    if (currentUser.auth.inscriptionDate) {
+      const start = new Date(currentUser.auth.inscriptionDate); const now = new Date();
+      dayInfo.textContent = `📅 Jour ${Math.floor((now - start) / 86400000) + 1} de votre aventure`;
+    } else dayInfo.textContent = '';
+
+    const inventoryContainer = document.getElementById('inventory-container'); inventoryContainer.innerHTML = '';
+    if (game().inventory.length === 0) inventoryContainer.innerHTML = '<div style="text-align:center;opacity:0.7;">Aucun objet.</div>';
+    else game().inventory.forEach(item => {
+      const row = document.createElement('div'); row.className = 'item-row';
+      row.innerHTML = `<div class="item-info"><div class="item-name">${item.name}</div><div class="item-desc">${item.desc}</div></div><span class="item-quantity">x${item.quantity}</span><button class="use-btn">Utiliser</button>`;
+      row.querySelector('.use-btn').addEventListener('click', () => useItem(item.id));
+      inventoryContainer.appendChild(row);
+    });
+
+    if (document.getElementById('page-inventory').classList.contains('active')) refreshQuizUI();
+    refreshAI();
+    if (document.getElementById('page-leaderboard').classList.contains('active')) refreshLeaderboard();
+    updateDailyTimer();
+  }
+
+  // ========== NAVIGATION ==========
+  function setActiveTab(tabId) {
+    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    if (tabId === 'tab-stat') document.getElementById('page-stat').classList.add('active');
+    else if (tabId === 'tab-quest') document.getElementById('page-quest').classList.add('active');
+    else if (tabId === 'tab-inventory') { document.getElementById('page-inventory').classList.add('active'); refreshQuizUI(); }
+    else if (tabId === 'tab-ai') document.getElementById('page-ai').classList.add('active');
+    else if (tabId === 'tab-leaderboard') { document.getElementById('page-leaderboard').classList.add('active'); refreshLeaderboard(); }
+    else if (tabId === 'tab-settings') {
+      document.getElementById('page-settings').classList.add('active');
+      // synchroniser l'interface des paramètres avec les valeurs actuelles
+      if (currentUser.game) {
+        document.getElementById('theme-toggle').checked = (currentUser.game.theme === 'light');
+        document.getElementById('bg-color-picker').value = currentUser.game.customColor || '#0d0221';
+      }
+    }
+  }
+
+  document.getElementById('tab-stat').addEventListener('click', () => setActiveTab('tab-stat'));
+  document.getElementById('tab-quest').addEventListener('click', () => setActiveTab('tab-quest'));
+  document.getElementById('tab-inventory').addEventListener('click', () => setActiveTab('tab-inventory'));
+  document.getElementById('tab-ai').addEventListener('click', () => setActiveTab('tab-ai'));
+  document.getElementById('tab-leaderboard').addEventListener('click', () => setActiveTab('tab-leaderboard'));
+  document.getElementById('tab-settings').addEventListener('click', () => setActiveTab('tab-settings'));
+
+  document.getElementById('reset-quests').addEventListener('click', resetDailyQuests);
+  document.getElementById('auto-distribute-btn').addEventListener('click', autoDistribute);
+
+  const chatInput = document.getElementById('chat-input');
+  const chatSend = document.getElementById('chat-send');
+  chatSend.addEventListener('click', () => {
+    const text = chatInput.value.trim(); if (!text) return;
+    updateAiChat(text, 'user');
+    const reply = processAiMessage(text); setTimeout(() => updateAiChat(reply, 'ai'), 300);
+    chatInput.value = '';
+  });
+  chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') chatSend.click(); });
+
+  // ========== INIT ==========
+  async function init() {
+    await openDB();
+    if (localStorage.getItem('solo_users_list')) await migrateFromLocalStorage();
+    const session = await loadActiveSession();
+    if (session) {
+      authScreen.style.display = 'none'; mainApp.style.display = 'block';
+      checkAndGenerateQuests(); refreshUI();
+    } else {
+      authScreen.style.display = 'flex'; mainApp.style.display = 'none'; renderAuthFields();
+    }
+  }
+  init();
+</script>
+</body>
+</html>
