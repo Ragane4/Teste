@@ -1,1035 +1,877 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="h-full bg-slate-950 text-slate-100">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Solo Leveling – Interface améliorée</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RegaRega Radio - Live FM Hardware Interface</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Orbitron, Share Tech Mono & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Orbitron', 'sans-serif'],
+            lcd: ['"Share Tech Mono"', 'monospace'],
+          },
+          colors: {
+            cyber: {
+              accent: '#00f0ff',
+              purple: '#7000ff',
+              amber: '#ffb000',
+              red: '#ff003c',
+              dark: '#0a0b10',
+              chassis: '#161922',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
-    /* ========== VARIABLES CSS (seront modifiées par JS) ========== */
-    :root {
-      --bg-primary: #0d0221;
-      --bg-secondary: #1a1a3e;
-      --border-color: #2a2a5e;
-      --text-color: #e0e0ff;
-      --accent-color: #00f0ff;
-      --gold-color: #ffd700;
-      --danger-color: #f44336;
-      --input-bg: #1c1c3b;
-      --tab-bg: #1a0a2e;
+    /* Texture aluminium brossé et visuel Hardware */
+    .brushed-metal {
+      background: radial-gradient(ellipse at center, rgba(30, 35, 48, 0.9) 0%, rgba(15, 17, 24, 0.98) 100%),
+                  repeating-linear-gradient(90deg, rgba(255,255,255,0.01) 0px, rgba(255,255,255,0.01) 1px, transparent 1px, transparent 4px);
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.15), inset 0 -3px 10px rgba(0,0,0,0.8), 0 20px 50px rgba(0,0,0,0.9);
     }
 
-    /* Thème clair */
-    body.light-mode {
-      --bg-primary: #f0f0ff;
-      --bg-secondary: #ffffff;
-      --border-color: #ccccdd;
-      --text-color: #1a1a2e;
-      --accent-color: #0066cc;
-      --gold-color: #cc8800;
-      --danger-color: #cc0000;
-      --input-bg: #ffffff;
-      --tab-bg: #e0e0ff;
+    .lcd-screen {
+      background: #040d0a;
+      box-shadow: inset 0 0 15px rgba(0, 240, 255, 0.2), inset 0 0 5px rgba(0,0,0,0.8);
+      border: 2px solid #1a2c26;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: var(--bg-primary);
-      font-family: 'Courier New', monospace;
-      display: flex; justify-content: center; align-items: center;
-      min-height: 100vh; padding: 20px; color: var(--text-color);
-      transition: background 0.3s, color 0.3s;
+    .knob-shadow {
+      box-shadow: 0 10px 25px rgba(0,0,0,0.8), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -3px 5px rgba(0,0,0,0.8);
     }
-
-    .screen {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: var(--bg-primary); display: flex; flex-direction: column;
-      align-items: center; justify-content: center; z-index: 999;
-      padding: 20px;
-    }
-    .screen h1 { color: var(--accent-color); font-size: 28px; margin-bottom: 10px; text-shadow: 0 0 10px var(--accent-color); }
-    .screen .subtitle { color: var(--text-color); opacity: 0.7; margin-bottom: 30px; text-align: center; }
-    .screen label { color: var(--accent-color); display: block; margin-bottom: 5px; font-weight: bold; }
-    .screen input {
-      width: 100%; max-width: 300px; padding: 12px;
-      margin-bottom: 15px; background: var(--input-bg); border: 1px solid var(--border-color);
-      border-radius: 10px; color: var(--text-color); font-size: 16px; outline: none;
-    }
-    .screen input:focus { border-color: var(--accent-color); }
-    .screen button {
-      background: var(--accent-color); color: var(--bg-primary); border: none;
-      padding: 12px 30px; border-radius: 10px; font-weight: bold;
-      font-size: 18px; cursor: pointer; margin: 5px; width: 200px;
-    }
-    .screen button:active { opacity: 0.8; }
-    .screen .secondary-btn {
-      background: transparent; color: var(--accent-color); border: 1px solid var(--accent-color);
-      padding: 10px 20px; font-size: 14px;
-    }
-    .error-msg { color: #ff5555; font-size: 14px; margin-bottom: 10px; display: none; }
-
-    .app {
-      width: 100%; max-width: 420px;
-      background: var(--bg-primary); border: 2px solid var(--accent-color);
-      border-radius: 20px; overflow: hidden;
-      box-shadow: 0 0 20px var(--accent-color)55;
-      display: none;
-    }
-    .tabs { display: flex; background: var(--tab-bg); border-bottom: 1px solid var(--accent-color); }
-    .tab {
-      flex: 1; text-align: center; padding: 10px 0;
-      color: var(--text-color); opacity: 0.6; font-weight: bold; cursor: pointer; font-size: 11px;
-      border-bottom: 3px solid transparent; transition: 0.3s;
-    }
-    .tab.active { color: var(--accent-color); opacity: 1; border-bottom-color: var(--accent-color); }
-    .page { display: none; padding: 20px; }
-    .page.active { display: block; }
-
-    .header { text-align: center; margin-bottom: 20px; }
-    .name { font-size: 24px; color: var(--accent-color); font-weight: bold; text-shadow: 0 0 8px var(--accent-color); }
-    .age { font-size: 16px; color: var(--text-color); opacity: 0.7; margin-bottom: 10px; }
-    .level { font-size: 18px; margin-top: 4px; }
-
-    .xp-section { margin-bottom: 25px; }
-    .xp-text { font-size: 14px; color: var(--text-color); opacity: 0.7; margin-bottom: 5px; }
-    .xp-bar { height: 20px; background: var(--input-bg); border-radius: 10px; overflow: hidden; }
-    .xp-fill { height: 100%; background: linear-gradient(90deg, var(--accent-color), #0088ff); border-radius: 10px; width: 0%; transition: width 0.4s; }
-    .points { color: var(--gold-color); font-size: 15px; margin-top: 10px; text-align: center; }
-
-    .stat-row, .item-row, .leaderboard-row, .setting-row {
-      display: flex; align-items: center;
-      background: var(--bg-secondary); padding: 12px; border-radius: 10px;
-      margin-bottom: 8px; border: 1px solid var(--border-color);
-    }
-    .stat-label, .item-info, .leaderboard-info, .setting-info { flex: 1; }
-    .item-name, .leaderboard-name { font-size: 16px; color: var(--text-color); }
-    .item-desc, .leaderboard-stats { font-size: 13px; color: var(--text-color); opacity: 0.6; margin-top: 2px; }
-    .item-quantity, .leaderboard-level { color: var(--accent-color); font-weight: bold; margin-right: 10px; }
-    .stat-value { color: var(--accent-color); font-size: 18px; font-weight: bold; margin-right: 10px; }
-    .plus-btn, .use-btn, .ai-btn {
-      background: var(--accent-color)33; color: var(--accent-color); border: none;
-      font-size: 16px; padding: 6px 12px; border-radius: 8px;
-      cursor: pointer; font-weight: bold;
-    }
-    .use-btn:active, .plus-btn:active, .ai-btn:active { background: var(--accent-color)66; }
-
-    .quest-card {
-      display: flex; align-items: center; justify-content: space-between;
-      background: var(--bg-secondary); padding: 12px; border-radius: 10px;
-      margin-bottom: 10px; border: 1px solid var(--border-color);
-    }
-    .quest-info { display: flex; flex-direction: column; }
-    .quest-title { font-size: 16px; color: var(--text-color); }
-    .quest-xp { font-size: 13px; color: var(--text-color); opacity: 0.6; }
-    .validate-btn {
-      background: var(--accent-color); color: var(--bg-primary);
-      padding: 8px 14px; border: none; border-radius: 8px;
-      font-weight: bold; cursor: pointer;
-    }
-    .validate-btn:active { opacity: 0.8; }
-
-    .timer-box {
-      text-align: center; margin-bottom: 15px;
-      background: var(--bg-secondary); padding: 8px; border-radius: 8px;
-      border: 1px solid var(--border-color); color: var(--gold-color); font-size: 16px;
-    }
-    .timer-box span { color: var(--accent-color); font-weight: bold; }
-
-    .quiz-box {
-      background: var(--bg-secondary); border: 1px solid var(--border-color);
-      border-radius: 10px; padding: 15px; margin-bottom: 20px;
-    }
-    .quiz-question { color: var(--accent-color); font-size: 16px; margin-bottom: 10px; }
-    .quiz-answers { display: flex; flex-direction: column; gap: 8px; }
-    .quiz-btn {
-      background: var(--border-color); color: var(--text-color); border: none;
-      padding: 10px; border-radius: 8px; cursor: pointer; text-align: left;
-      font-size: 14px; transition: 0.2s;
-    }
-    .quiz-btn:hover { background: var(--accent-color)33; }
-    .quiz-feedback { margin-top: 10px; font-weight: bold; }
-
-    .reset-btn, .export-btn, .import-btn {
-      margin-top: 15px; text-align: center;
-      background: var(--border-color); padding: 10px; border-radius: 8px;
-      cursor: pointer; color: var(--text-color);
-    }
-    .logout-btn {
-      margin-top: 5px; text-align: center;
-      background: var(--danger-color); padding: 8px; border-radius: 8px;
-      cursor: pointer; color: #fff; font-size: 12px;
-    }
-
-    /* Switch jour/nuit */
-    .switch {
-      position: relative; display: inline-block; width: 48px; height: 24px;
-    }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider {
-      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-      background-color: var(--border-color); transition: .4s; border-radius: 24px;
-    }
-    .slider:before {
-      position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
-      background-color: var(--accent-color); transition: .4s; border-radius: 50%;
-    }
-    input:checked + .slider { background-color: var(--accent-color); }
-    input:checked + .slider:before { transform: translateX(24px); }
-
-    .chat-container {
-      background: var(--bg-secondary); border-radius: 12px; padding: 15px;
-      margin-top: 20px; height: 200px; overflow-y: auto;
-      display: flex; flex-direction: column; gap: 8px;
-    }
-    .chat-bubble {
-      max-width: 80%; padding: 8px 12px; border-radius: 12px;
-      font-size: 14px; line-height: 1.4;
-    }
-    .user-bubble { align-self: flex-end; background: var(--accent-color)33; color: var(--text-color); }
-    .ai-bubble { align-self: flex-start; background: var(--border-color); color: var(--accent-color); }
-    .chat-input-area { display: flex; margin-top: 10px; gap: 5px; }
-    .chat-input {
-      flex: 1; background: var(--input-bg); border: 1px solid var(--border-color);
-      color: var(--text-color); padding: 10px; border-radius: 8px; outline: none;
-    }
-    .send-btn {
-      background: var(--accent-color); color: var(--bg-primary); border: none;
-      border-radius: 8px; padding: 10px 15px; font-weight: bold;
-    }
-
-    .toast {
-      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-      background: var(--accent-color)dd; color: var(--bg-primary); padding: 10px 20px;
-      border-radius: 20px; font-weight: bold; font-size: 14px;
-      opacity: 0; transition: opacity 0.3s; z-index: 9999; pointer-events: none;
-    }
-    .toast.show { opacity: 1; }
-
-    /* Input color personnalisé */
-    input[type="color"] {
-      width: 40px; height: 40px; border: 1px solid var(--border-color);
-      border-radius: 8px; background: var(--input-bg); cursor: pointer;
+    
+    .wood-panel {
+      background: #0f0b08;
+      border-left: 6px solid #2a1a0e;
+      border-right: 6px solid #2a1a0e;
     }
   </style>
 </head>
-<body>
+<body class="h-full flex items-center justify-center font-sans antialiased bg-cyber-dark text-slate-200 p-2 select-none overflow-hidden">
 
-<!-- Écran d'authentification -->
-<div class="screen" id="auth-screen">
-  <h1>⚔️ Système activé</h1>
-  <p class="subtitle" id="auth-subtitle">Connectez-vous ou créez un compte</p>
-  <div id="auth-fields"></div>
-  <div class="error-msg" id="auth-error"></div>
-  <button id="auth-action-btn">Se connecter</button>
-  <button class="secondary-btn" id="auth-switch-btn">Créer un compte</button>
-</div>
-
-<!-- Application principale -->
-<div class="app" id="main-app">
-  <div class="tabs">
-    <div class="tab active" id="tab-stat">📋 Statut</div>
-    <div class="tab" id="tab-quest">⚔️ Quêtes</div>
-    <div class="tab" id="tab-inventory">🎒 Inventaire</div>
-    <div class="tab" id="tab-ai">🧠 IA</div>
-    <div class="tab" id="tab-leaderboard">🏆</div>
-    <div class="tab" id="tab-settings">⚙️</div>
-  </div>
-
-  <!-- PAGE STATUT -->
-  <div class="page active" id="page-stat">
-    <div class="header">
-      <div class="name" id="player-name">Hunter</div>
-      <div class="age" id="player-age">20 ans</div>
-      <div class="level">Niveau <span id="level">1</span></div>
-    </div>
-    <div class="xp-section">
-      <div class="xp-text">XP <span id="xp">0</span> / <span id="xp-to-next">100</span></div>
-      <div class="xp-bar"><div class="xp-fill" id="xp-fill"></div></div>
-      <div class="points" id="points-msg" style="display:none;">⭐ <span id="points-val">0</span> point(s) disponible(s)</div>
-    </div>
-    <div id="stats-container"></div>
-    <div class="export-btn" id="export-data">💾 Sauvegarder mes données (export)</div>
-    <div class="import-btn" id="import-data">📂 Restaurer une sauvegarde (import)</div>
-    <input type="file" id="import-file" style="display:none">
-    <div class="reset-btn" id="reset-quests">🔄 Nouvelles quêtes (debug)</div>
-    <div class="logout-btn" id="logout-btn">🚪 Déconnexion</div>
-  </div>
-
-  <!-- PAGE QUETES -->
-  <div class="page" id="page-quest">
-    <div class="timer-box" id="daily-timer">
-      ⏳ Reset dans : <span id="timer-countdown">--:--:--</span>
-    </div>
-    <div id="quests-container"></div>
-    <div style="text-align:center; margin-top:10px; color:var(--text-color); opacity:0.7; font-size:13px;" id="quest-day-info"></div>
-  </div>
-
-  <!-- PAGE INVENTAIRE + QUIZ -->
-  <div class="page" id="page-inventory">
-    <div class="quiz-box" id="quiz-box">
-      <div class="quiz-question" id="quiz-question">Chargement...</div>
-      <div class="quiz-answers" id="quiz-answers"></div>
-      <div class="quiz-feedback" id="quiz-feedback"></div>
-    </div>
-    <div id="inventory-container"></div>
-    <div style="margin-top:20px; text-align:center; color:var(--text-color); opacity:0.7; font-size:14px;">
-      Utilise un objet pour obtenir son effet.
-    </div>
-  </div>
-
-  <!-- PAGE IA -->
-  <div class="page" id="page-ai">
-    <h3 style="color:var(--accent-color); margin-bottom:15px;">Assistant IA du Système</h3>
-    <div id="ai-advice" style="background:var(--bg-secondary); border-radius:10px; padding:12px; margin-bottom:15px; border:1px solid var(--border-color);"></div>
-    <button class="ai-btn" id="auto-distribute-btn" style="width:100%; margin-bottom:15px;">
-      ⚡ Auto-distribuer mes points (IA)
-    </button>
-    <div class="chat-container" id="chat-container">
-      <div class="ai-bubble chat-bubble">Système : Bonjour, <span id="ai-chat-name">Chasseur</span>.</div>
-    </div>
-    <div class="chat-input-area">
-      <input type="text" class="chat-input" id="chat-input" placeholder="Par ex: Quelle stat améliorer ?">
-      <button class="send-btn" id="chat-send">➤</button>
-    </div>
-  </div>
-
-  <!-- PAGE CLASSEMENT -->
-  <div class="page" id="page-leaderboard">
-    <h3 style="color:var(--accent-color); margin-bottom:15px;">🏆 Classement des Chasseurs</h3>
-    <div id="leaderboard-container"></div>
-  </div>
-
-  <!-- PAGE PARAMÈTRES (NOUVEAU) -->
-  <div class="page" id="page-settings">
-    <h3 style="color:var(--accent-color); margin-bottom:15px;">⚙️ Personnalisation</h3>
-    <div class="setting-row">
-      <div class="setting-info">
-        <div style="font-size:16px; color:var(--text-color);">Mode Nuit / Jour</div>
-        <div style="font-size:13px; color:var(--text-color); opacity:0.6;">Basculer l'apparence</div>
+  <!-- MAIN HARDWARE RADIO UNIT -->
+  <div class="w-full max-w-3xl brushed-metal wood-panel rounded-2xl border border-white/10 p-3 md:p-5 relative flex flex-col justify-between space-y-3 shadow-2xl my-auto">
+    
+    <!-- BRANDING & ON AIR INDICATORS HEADER -->
+    <div class="flex items-center justify-between border-b border-white/10 pb-3">
+      <div class="flex items-center space-x-3">
+        <div class="w-3 h-10 bg-gradient-to-b from-red-600 via-white to-emerald-600 rounded-sm shadow-[0_0_10px_rgba(16,185,129,0.4)]"></div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="font-display font-black text-xl md:text-2xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 drop-shadow">
+              REGAREGA <span class="text-cyber-accent text-xs md:text-base font-normal">RADIO</span>
+            </h1>
+            <span class="bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 text-[9px] font-mono px-2 py-0.5 rounded-full flex items-center space-x-1">
+              <span>🇲🇬</span>
+              <span class="font-bold">ANTALAHA</span>
+            </span>
+          </div>
+          <p class="text-[9px] md:text-[10px] text-slate-400 font-mono tracking-widest uppercase flex items-center space-x-2 mt-0.5">
+            <span>Antalaha, Madagascar</span>
+            <span>&bull;</span>
+            <span class="text-cyber-accent font-bold flex items-center space-x-1">
+              <i data-lucide="phone" class="w-2.5 h-2.5"></i>
+              <span>+261 32 57 476 63</span>
+            </span>
+          </p>
+        </div>
       </div>
-      <label class="switch">
-        <input type="checkbox" id="theme-toggle">
-        <span class="slider"></span>
-      </label>
-    </div>
-    <div class="setting-row">
-      <div class="setting-info">
-        <div style="font-size:16px; color:var(--text-color);">Couleur de fond personnalisée</div>
-        <div style="font-size:13px; color:var(--text-color); opacity:0.6;">Laisser vide pour utiliser le thème par défaut</div>
+
+      <!-- LED STATUS LIGHTS -->
+      <div class="flex items-center space-x-2 md:space-x-4">
+        <!-- Power / Signal LED -->
+        <div class="flex flex-col items-center space-y-0.5">
+          <span class="text-[8px] font-mono text-slate-400 uppercase">Signal</span>
+          <div id="led-signal" class="w-2.5 h-2.5 rounded-full bg-slate-800 border border-black transition-all duration-300"></div>
+        </div>
+
+        <!-- Stereo LED -->
+        <div class="flex flex-col items-center space-y-0.5">
+          <span class="text-[8px] font-mono text-slate-400 uppercase">Stereo</span>
+          <div id="led-stereo" class="w-2.5 h-2.5 rounded-full bg-slate-800 border border-black transition-all duration-300"></div>
+        </div>
+
+        <!-- ON AIR LIVE LED BADGE -->
+        <div class="flex flex-col items-center space-y-0.5">
+          <span class="text-[8px] font-mono text-slate-400 uppercase">Status</span>
+          <div id="badge-onair" class="px-2 py-0.5 rounded bg-slate-900 border border-white/5 text-[9px] font-display font-bold text-slate-600 transition-all duration-300">
+            OFF AIR
+          </div>
+        </div>
       </div>
-      <input type="color" id="bg-color-picker" value="#0d0221">
-      <button class="use-btn" id="reset-color-btn" style="margin-left:8px;">Réinit.</button>
     </div>
-    <div class="setting-row" style="margin-top:20px;">
-      <button class="ai-btn" id="save-settings-btn" style="width:100%;">💾 Appliquer et sauvegarder</button>
+
+    <!-- ADMIN ACCESSS BUTTON BAR -->
+    <div class="flex justify-end -mt-1 -mb-1">
+      <button id="open-admin-btn" class="flex items-center space-x-1.5 text-[10px] font-mono text-cyber-accent hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-cyber-accent/30 px-2 py-1 rounded transition duration-200">
+        <i data-lucide="lock" class="w-3 h-3"></i>
+        <span>ACCÈS RÉGIE (MOT DE PASSE)</span>
+      </button>
+    </div>
+
+    <!-- CENTER CONSOLE: TUNER FREQUENCY DISPLAY & ANALOG VU METER -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+      
+      <!-- LCD TUNER & FREQUENCY PANEL -->
+      <div class="md:col-span-2 lcd-screen rounded-xl p-3 md:p-4 flex flex-col justify-between space-y-2 relative overflow-hidden">
+        
+        <!-- Scanlines effect -->
+        <div class="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px] pointer-events-none opacity-40"></div>
+
+        <div class="flex items-center justify-between text-cyber-accent font-lcd text-[10px]">
+          <span class="flex items-center space-x-1">
+            <i data-lucide="radio" class="w-3 h-3"></i>
+            <span>ANTALAHA LIVE FM TRANSMITTER</span>
+          </span>
+          <span id="tuning-status" class="text-cyber-amber animate-pulse">PRÊT</span>
+        </div>
+
+        <!-- BIG FREQUENCY DISPLAY -->
+        <div class="flex items-baseline justify-center space-x-2 py-1">
+          <span id="freq-display" class="font-lcd text-4xl md:text-5xl font-bold text-cyber-accent tracking-widest drop-shadow-[0_0_15px_rgba(0,240,255,0.6)]">
+            107.9
+          </span>
+          <span class="font-display text-base text-cyber-accent font-bold">MHz</span>
+        </div>
+
+        <!-- ANALOG TUNING DIAL SCALE -->
+        <div class="relative w-full h-6 bg-slate-950/80 rounded border border-cyber-accent/20 overflow-hidden flex items-center px-2">
+          <div class="w-full flex justify-between text-[9px] font-lcd text-cyan-700 select-none">
+            <span>88</span><span>92</span><span>96</span><span>100</span><span class="text-cyber-accent font-bold">104</span><span>108</span>
+          </div>
+          <!-- Red Needle Indicator -->
+          <div id="freq-needle" class="absolute top-0 bottom-0 w-0.5 bg-cyber-red shadow-[0_0_8px_#ff003c] transition-all duration-700 ease-out" style="left: 88%;"></div>
+        </div>
+      </div>
+
+      <!-- ANALOG VU METER -->
+      <div class="lcd-screen rounded-xl p-3 h-full flex flex-col justify-between items-center relative overflow-hidden">
+        <span class="text-[9px] font-lcd text-cyber-amber uppercase tracking-widest self-start">Output Level (VU)</span>
+        
+        <!-- Needle Meter Container -->
+        <div class="relative w-full h-16 flex items-end justify-center">
+          <!-- Scale Arcs -->
+          <svg class="absolute inset-0 w-full h-full text-slate-700" viewBox="0 0 100 60">
+            <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2" />
+            <path d="M 70 20 A 40 40 0 0 1 90 50" fill="none" stroke="#ff003c" stroke-width="3" />
+          </svg>
+          
+          <!-- Needle -->
+          <div id="vu-needle" class="w-0.5 h-14 bg-cyber-amber origin-bottom transition-transform duration-100 ease-out shadow-[0_0_5px_#ffb000]" style="transform: rotate(-45deg);"></div>
+        </div>
+        
+        <div class="flex justify-between w-full text-[8px] font-mono text-slate-500 px-1">
+          <span>-20dB</span>
+          <span>0dB</span>
+          <span class="text-cyber-red">+3dB</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN HARDWARE CONTROLS: POWER & VOLUME ONLY -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center bg-slate-950/60 p-3 md:p-4 rounded-xl border border-white/5">
+      
+      <!-- CONTROL 1: MAIN POWER / TUNE BUTTON (PLAY / PAUSE) -->
+      <div class="flex flex-col items-center space-y-1.5">
+        <button id="master-power-btn" class="relative group w-20 h-20 rounded-full bg-gradient-to-b from-slate-700 via-slate-800 to-slate-950 p-1 knob-shadow transition duration-200 active:scale-95">
+          <div class="w-full h-full rounded-full bg-gradient-to-b from-slate-900 to-slate-950 border border-white/10 flex items-center justify-center group-hover:border-cyber-accent/50 transition">
+            <div id="power-inner-ring" class="w-12 h-12 rounded-full bg-slate-900 border-2 border-slate-700 flex items-center justify-center shadow-inner transition duration-300">
+              <i data-lucide="power" id="power-icon" class="w-6 h-6 text-slate-500 transition duration-300"></i>
+            </div>
+          </div>
+        </button>
+        <div class="text-center">
+          <span class="font-display text-[10px] font-bold tracking-widest text-slate-300 uppercase block">MASTER POWER / TUNE</span>
+          <span class="text-[8px] text-slate-500 font-mono">APPUI: ALIMENTATION DIRECTE FM</span>
+        </div>
+      </div>
+
+      <!-- CONTROL 2: ROTARY VOLUME KNOB -->
+      <div class="flex flex-col items-center space-y-1.5">
+        <div class="relative w-20 h-20 flex items-center justify-center">
+          <!-- Knob Dial -->
+          <div id="volume-knob" class="w-16 h-16 rounded-full bg-gradient-to-b from-slate-700 via-slate-800 to-slate-950 p-1 knob-shadow cursor-grab active:cursor-grabbing relative transition-transform duration-75">
+            <div class="w-full h-full rounded-full bg-slate-900 border border-white/10 relative flex items-center justify-center">
+              <!-- Indicator Notch -->
+              <div class="absolute top-1.5 w-1 h-3 bg-cyber-accent rounded-full shadow-[0_0_8px_#00f0ff]"></div>
+              <i data-lucide="volume-2" class="w-5 h-5 text-slate-600"></i>
+            </div>
+          </div>
+        </div>
+        <div class="text-center">
+          <span class="font-display text-[10px] font-bold tracking-widest text-slate-300 uppercase block">VOLUME POTENTIOMÈTRE</span>
+          <span id="volume-percentage" class="text-[9px] text-cyber-accent font-mono">80%</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- HARDWARE FOOTER SPECS -->
+    <div class="flex justify-between items-center text-[8px] font-mono text-slate-500 border-t border-white/5 pt-2">
+      <span>MODEL: RGR-2088-MADAGASCAR</span>
+      <span class="text-emerald-400/80">ANTALAHA &bull; TEL: +261 32 57 476 63</span>
+      <span>LIVE BROADCAST NO-STOP</span>
+    </div>
+
+  </div>
+
+  <!-- MODAL AUTHENTIFICATION ADMIN (PASSWORD: 01010) -->
+  <div id="auth-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="w-full max-w-sm bg-slate-900 border border-cyber-accent/40 rounded-2xl p-6 shadow-2xl space-y-5">
+      <div class="text-center space-y-2">
+        <div class="w-12 h-12 rounded-full bg-cyber-accent/10 border border-cyber-accent text-cyber-accent flex items-center justify-center mx-auto">
+          <i data-lucide="lock" class="w-6 h-6"></i>
+        </div>
+        <h3 class="font-display font-bold text-lg text-white">ACCÈS RÉGIE ACCRÉDITÉ</h3>
+        <p class="text-xs font-mono text-slate-400">Saisissez le mot de passe pour programmer la radio.</p>
+      </div>
+
+      <form id="auth-form" class="space-y-4">
+        <div>
+          <input type="password" id="auth-password" placeholder="Mot de passe..." required 
+            class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-center text-lg tracking-widest font-mono text-white focus:border-cyber-accent outline-none">
+          <p id="auth-error" class="text-cyber-red text-xs font-mono text-center mt-2 hidden">Mot de passe incorrect !</p>
+        </div>
+
+        <div class="flex space-x-2">
+          <button type="button" id="close-auth-btn" class="w-1/2 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs font-bold transition">
+            ANNULER
+          </button>
+          <button type="submit" class="w-1/2 py-2.5 rounded-lg bg-cyber-accent hover:bg-cyan-400 text-slate-950 font-display text-xs font-bold transition">
+            DEVERROUILLER
+          </button>
+        </div>
+      </form>
     </div>
   </div>
-</div>
 
-<div class="toast" id="toast"></div>
+  <!-- MODAL ADMINISTRATION / REGIE RADIO -->
+  <div id="admin-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="w-full max-w-4xl bg-slate-900 border border-cyber-accent/30 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-white/10 flex items-center justify-between bg-slate-950">
+        <div class="flex items-center space-x-3">
+          <i data-lucide="sliders" class="w-6 h-6 text-cyber-accent"></i>
+          <div>
+            <h2 class="font-display text-lg font-bold text-white tracking-wider">CONSOLE DE PROGRAMMATION REGARÉGA</h2>
+            <p class="text-xs font-mono text-slate-400">Gestion MP3, flux FM & vidéos YouTube en direct</p>
+          </div>
+        </div>
+        <button id="close-admin-btn" class="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
 
-<script type="module">
-  // ========== INDEXEDDB ==========
-  const DB_NAME = 'SoloLevelingDB';
-  const DB_VERSION = 1;
-  let db;
+      <!-- Navigation Tabs -->
+      <div class="flex border-b border-white/10 bg-slate-950/50 px-5 text-sm font-mono">
+        <button id="tab-library" class="py-3 px-4 border-b-2 border-cyber-accent text-cyber-accent font-bold flex items-center space-x-2">
+          <i data-lucide="music" class="w-4 h-4"></i>
+          <span>Bibliothèque Audio</span>
+        </button>
+        <button id="tab-schedule" class="py-3 px-4 border-b-2 border-transparent text-slate-400 hover:text-white flex items-center space-x-2">
+          <i data-lucide="calendar-clock" class="w-4 h-4"></i>
+          <span>Grille Horaires</span>
+        </button>
+      </div>
 
-  function openDB() {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains('users')) {
-          db.createObjectStore('users', { keyPath: 'username' });
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto space-y-6 flex-1 text-xs md:text-sm">
+        
+        <!-- SECTION 1: LIBRARY MANAGEMENT -->
+        <div id="section-library" class="space-y-6">
+          <!-- Formulaire Ajout de Morceau -->
+          <form id="add-track-form" class="bg-slate-950/80 p-4 rounded-xl border border-white/5 grid grid-cols-1 md:grid-cols-3 gap-3">
+            <h3 class="md:col-span-3 font-display font-bold text-cyber-accent text-xs uppercase tracking-wider flex items-center space-x-2">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              <span>Ajouter une Nouvelle Piste (MP3, Web Radio, YouTube ou fichier local)</span>
+            </h3>
+            <input type="text" id="input-title" placeholder="Titre de la chanson" required class="bg-slate-900 border border-slate-700 rounded p-2 text-white focus:border-cyber-accent outline-none">
+            <input type="text" id="input-artist" placeholder="Artiste" required class="bg-slate-900 border border-slate-700 rounded p-2 text-white focus:border-cyber-accent outline-none">
+            <input type="text" id="input-url" placeholder="Lien Audio MP3 ou Lien YouTube (https://youtu.be/...)" class="bg-slate-900 border border-slate-700 rounded p-2 text-white focus:border-cyber-accent outline-none">
+            <input type="file" id="input-local-file" accept="audio/*" class="bg-slate-900 border border-slate-700 rounded p-2 text-slate-300 focus:border-cyber-accent outline-none file:mr-3 file:rounded file:border-0 file:bg-cyber-accent file:px-2 file:py-1 file:text-slate-950 file:font-bold">
+            <select id="input-slot" class="bg-slate-900 border border-slate-700 rounded p-2 text-slate-300 focus:border-cyber-accent outline-none">
+              <option value="08:00">08:00 - Morning Chill</option>
+              <option value="12:00">12:00 - Midday Beats</option>
+              <option value="16:00">16:00 - Afternoon Groove</option>
+              <option value="20:00">20:00 - Night Special</option>
+            </select>
+            <input type="text" id="input-freq" placeholder="Fréquence FM (ex: 107.9)" value="107.9" class="bg-slate-900 border border-slate-700 rounded p-2 text-white focus:border-cyber-accent outline-none">
+            <button type="submit" class="bg-cyber-accent hover:bg-cyan-400 text-slate-950 font-bold font-display rounded p-2 transition flex items-center justify-center space-x-1">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              <span>ENREGISTRER</span>
+            </button>
+          </form>
+
+          <!-- Liste des Pistes -->
+          <div class="space-y-2">
+            <h3 class="font-display text-xs text-slate-400 font-bold uppercase tracking-wider">Catalogue Audio Programmé</h3>
+            <div id="tracks-table" class="space-y-2">
+              <!-- Dynamique via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: SCHEDULE MANAGEMENT -->
+        <div id="section-schedule" class="hidden space-y-4">
+          <div class="bg-slate-950 p-4 rounded-xl border border-white/5 space-y-3">
+            <h3 class="font-display font-bold text-cyber-amber text-xs uppercase tracking-wider flex items-center space-x-2">
+              <i data-lucide="clock" class="w-4 h-4"></i>
+              <span>Grille de Programmation Hebdomadaire</span>
+            </h3>
+            <p class="text-slate-400 text-xs">Le système diffuse automatiquement le morceau associé à l'heure courante. Si aucune piste spécifique n'est définie, le mode continu prend le relais.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2" id="schedule-grid">
+              <!-- Dynamique via JS -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-white/10 bg-slate-950 flex justify-between items-center text-xs font-mono text-slate-400">
+        <span id="admin-status">Base de données synchronisée</span>
+        <button id="btn-jingle" class="bg-cyber-red/20 hover:bg-cyber-red text-cyber-red hover:text-white border border-cyber-red/40 px-3 py-1.5 rounded transition flex items-center space-x-1.5 font-bold">
+          <i data-lucide="zap" class="w-4 h-4"></i>
+          <span>LANCER JINGLE ANTENNE</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Audio Elements & Hidden YouTube API Container -->
+  <audio id="audio-player" crossorigin="anonymous"></audio>
+  <div id="youtube-player-container" class="hidden"></div>
+
+  <!-- Load YouTube IFrame Player API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <!-- Application Logic -->
+  <script>
+    const DEFAULT_PASSWORD = '01010';
+
+    // Liste de flux radio FM / Chansons programmables (Support MP3 & YouTube)
+    // Vidéo YouTube sélectionnée : https://www.youtube.com/watch?v=yW_D856HRpo&list=PLVZLxjsxV69klmKGRb8WUlRDco54Sw2cS
+    let liveStreams = [
+      { id: 1, title: "Lecture YouTube", artist: "YouTube", freq: "107.9", timeSlot: "08:00", url: "https://www.youtube.com/watch?v=yW_D856HRpo", type: "youtube", youtubeId: "yW_D856HRpo" }
+    ];
+
+    let currentStreamIndex = 0;
+    let isPoweredOn = false;
+    let volumeLevel = 0.8;
+    let isAdminUnlocked = false;
+
+    // YouTube API Player reference
+    let ytPlayer = null;
+    let isYouTubeReady = false;
+
+    // Audio Context & Web Audio API
+    const audio = document.getElementById('audio-player');
+    let audioContext, analyser, dataArray;
+
+    // DOM Elements Hardware
+    const masterPowerBtn = document.getElementById('master-power-btn');
+    const powerInnerRing = document.getElementById('power-inner-ring');
+    const powerIcon = document.getElementById('power-icon');
+    
+    const ledSignal = document.getElementById('led-signal');
+    const ledStereo = document.getElementById('led-stereo');
+    const badgeOnAir = document.getElementById('badge-onair');
+    const tuningStatus = document.getElementById('tuning-status');
+    const freqDisplay = document.getElementById('freq-display');
+    const freqNeedle = document.getElementById('freq-needle');
+    
+    const volumeKnob = document.getElementById('volume-knob');
+    const volumePercentage = document.getElementById('volume-percentage');
+    const vuNeedle = document.getElementById('vu-needle');
+
+    // DOM Elements Auth & Admin
+    const openAdminBtn = document.getElementById('open-admin-btn');
+    const authModal = document.getElementById('auth-modal');
+    const authForm = document.getElementById('auth-form');
+    const authPassword = document.getElementById('auth-password');
+    const authError = document.getElementById('auth-error');
+    const closeAuthBtn = document.getElementById('close-auth-btn');
+
+    const adminModal = document.getElementById('admin-modal');
+    const closeAdminBtn = document.getElementById('close-admin-btn');
+    const tabLibrary = document.getElementById('tab-library');
+    const tabSchedule = document.getElementById('tab-schedule');
+    const sectionLibrary = document.getElementById('section-library');
+    const sectionSchedule = document.getElementById('section-schedule');
+    const addTrackForm = document.getElementById('add-track-form');
+    const inputLocalFile = document.getElementById('input-local-file');
+    const tracksTable = document.getElementById('tracks-table');
+    const scheduleGrid = document.getElementById('schedule-grid');
+    const btnJingle = document.getElementById('btn-jingle');
+
+    function getCurrentStream() {
+      if (!liveStreams.length) return null;
+      if (currentStreamIndex < 0) currentStreamIndex = 0;
+      if (currentStreamIndex >= liveStreams.length) currentStreamIndex = liveStreams.length - 1;
+      return liveStreams[currentStreamIndex];
+    }
+
+    function stopYouTubePlayback() {
+      if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
+        try {
+          ytPlayer.stopVideo();
+        } catch (error) {
+          console.warn('Impossible d’arrêter la lecture YouTube:', error);
         }
+      }
+    }
+
+    // Callback pour l'API YouTube IFrame
+    function onYouTubeIframeAPIReady() {
+      ytPlayer = new YT.Player('youtube-player-container', {
+        height: '0',
+        width: '0',
+        events: {
+          'onReady': () => { isYouTubeReady = true; },
+          'onStateChange': (event) => {
+            if (!liveStreams.length) return;
+            if (event.data === YT.PlayerState.ENDED && isPoweredOn) {
+              currentStreamIndex = (currentStreamIndex + 1) % liveStreams.length;
+              playCurrentStream();
+            }
+          }
+        }
+      });
+    }
+
+    // Helper pour extraire l'ID d'une vidéo YouTube depuis n'importe quelle URL
+    function extractYouTubeId(url) {
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      return (match && match[2].length === 11) ? match[2] : null;
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      audio.volume = volumeLevel;
+      updateKnobRotation();
+      setupEventListeners();
+      renderTracksList();
+      renderScheduleGrid();
+    });
+
+    // --- Web Audio API & VU Meter Simulation ---
+    function initWebAudio() {
+      if (audioContext) return;
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 32;
+        
+        const source = audioContext.createMediaElementSource(audio);
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+        
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+      } catch (e) {
+        console.warn('Web Audio API non initialisée:', e);
+      }
+      updateVUMeter();
+    }
+
+    function updateVUMeter() {
+      requestAnimationFrame(updateVUMeter);
+      if (!isPoweredOn) {
+        vuNeedle.style.transform = 'rotate(-45deg)';
+        return;
+      }
+
+      const stream = getCurrentStream();
+      let intensity = 0;
+
+      if (stream && stream.type === 'audio' && analyser) {
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+        intensity = sum / (dataArray.length * 255);
+      } else {
+        intensity = 0.4 + Math.random() * 0.45;
+      }
+
+      const angle = -45 + intensity * 90;
+      vuNeedle.style.transform = `rotate(${angle}deg)`;
+    }
+
+    function playStaticNoise() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const bufferSize = ctx.sampleRate * 0.25;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const output = buffer.getChannelData(0);
+
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 2 - 1;
+        }
+
+        const whiteNoise = ctx.createBufferSource();
+        whiteNoise.buffer = buffer;
+
+        const gainNode = ctx.createGain();
+        gainNode.gain.setValueAtTime(0.08, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+
+        whiteNoise.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        whiteNoise.start();
+      } catch (e) {}
+    }
+
+    function safeAudioPlay() {
+      if (!audio || !audio.src) return;
+      audio.volume = volumeLevel;
+      audio.play().catch(() => {
+        if (isPoweredOn) {
+          setTimeout(() => audio.play().catch(() => {}), 180);
+        }
+      });
+    }
+
+    // --- Power & Tuning Control ---
+    function togglePower() {
+      if (!liveStreams.length) return;
+      isPoweredOn = !isPoweredOn;
+
+      if (isPoweredOn) {
+        initWebAudio();
+        if (audioContext && audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+
+        playStaticNoise();
+
+        powerInnerRing.className = "w-16 h-16 rounded-full bg-slate-900 border-2 border-cyber-accent flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.5)] transition duration-300";
+        powerIcon.className = "w-8 h-8 text-cyber-accent transition duration-300";
+
+        ledSignal.className = "w-3.5 h-3.5 rounded-full bg-emerald-400 border border-black shadow-[0_0_10px_#34d399]";
+        ledStereo.className = "w-3.5 h-3.5 rounded-full bg-cyber-accent border border-black shadow-[0_0_10px_#00f0ff]";
+
+        badgeOnAir.className = "px-3 py-1 rounded bg-red-600 border border-red-400 text-[11px] font-display font-bold text-white shadow-[0_0_12px_rgba(255,0,60,0.8)] animate-pulse";
+        badgeOnAir.textContent = "ON AIR";
+
+        tuningStatus.textContent = "VERROUILLÉ";
+        tuningStatus.className = "text-emerald-400 font-bold";
+
+        playCurrentStream();
+      } else {
+        audio.pause();
+        stopYouTubePlayback();
+
+        powerInnerRing.className = "w-16 h-16 rounded-full bg-slate-900 border-2 border-slate-700 flex items-center justify-center shadow-inner transition duration-300";
+        powerIcon.className = "w-8 h-8 text-slate-500 transition duration-300";
+
+        ledSignal.className = "w-3.5 h-3.5 rounded-full bg-slate-800 border border-black";
+        ledStereo.className = "w-3.5 h-3.5 rounded-full bg-slate-800 border border-black";
+
+        badgeOnAir.className = "px-3 py-1 rounded bg-slate-900 border border-white/5 text-[11px] font-display font-bold text-slate-600";
+        badgeOnAir.textContent = "OFF AIR";
+
+        tuningStatus.textContent = "STANDBY";
+        tuningStatus.className = "text-slate-600 font-bold";
+      }
+    }
+
+    function playCurrentStream() {
+      const stream = getCurrentStream();
+      if (!stream) return;
+
+      freqDisplay.textContent = stream.freq;
+
+      const parsedFreq = Number.parseFloat(stream.freq);
+      if (!Number.isNaN(parsedFreq)) {
+        const needlePos = ((parsedFreq - 88) / (108 - 88)) * 100;
+        freqNeedle.style.left = `${Math.min(Math.max(needlePos, 5), 95)}%`;
+      }
+
+      if (stream.type === 'youtube' && stream.youtubeId) {
+        audio.pause();
+        if (ytPlayer && isYouTubeReady) {
+          ytPlayer.setVolume(volumeLevel * 100);
+          ytPlayer.loadVideoById(stream.youtubeId);
+        }
+      } else {
+        stopYouTubePlayback();
+        audio.src = stream.url;
+        audio.load();
+        safeAudioPlay();
+      }
+    }
+
+    function forcePlayStream(index) {
+      if (!Number.isInteger(index) || index < 0 || index >= liveStreams.length) return;
+
+      currentStreamIndex = index;
+      if (!isPoweredOn) {
+        togglePower();
+      } else {
+        playStaticNoise();
+        playCurrentStream();
+      }
+    }
+
+    // --- Volume Knob Handling ---
+    let isDraggingKnob = false;
+    let startY = 0;
+
+    function updateKnobRotation() {
+      const rotationAngle = -135 + (volumeLevel * 270);
+      volumeKnob.style.transform = `rotate(${rotationAngle}deg)`;
+      volumePercentage.textContent = `${Math.round(volumeLevel * 100)}%`;
+      
+      audio.volume = volumeLevel;
+      if (ytPlayer && typeof ytPlayer.setVolume === 'function') {
+        ytPlayer.setVolume(volumeLevel * 100);
+      }
+    }
+
+    // --- ADMIN CONTROLS, AUTH & SCHEDULER LOGIC ---
+    function renderTracksList() {
+      tracksTable.innerHTML = '';
+      if (!liveStreams.length) {
+        tracksTable.innerHTML = '<div class="text-slate-500 text-center py-4">Aucune piste dans la bibliothèque</div>';
+        return;
+      }
+
+      liveStreams.forEach((track, idx) => {
+        const item = document.createElement('div');
+        item.className = "flex items-center justify-between p-3 rounded-lg bg-slate-950/60 border border-white/5 hover:border-cyber-accent/30 transition";
+        item.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <button data-action="play" data-index="${idx}" class="p-2 rounded-full bg-cyber-accent/10 hover:bg-cyber-accent text-cyber-accent hover:text-slate-950 transition">
+              <i data-lucide="play" class="w-4 h-4"></i>
+            </button>
+            <div>
+              <div class="font-bold text-white flex items-center space-x-2">
+                <span>${track.title}</span>
+                ${track.type === 'youtube' ? '<span class="text-[9px] bg-red-600/80 text-white px-1.5 py-0.5 rounded font-mono">YOUTUBE</span>' : ''}
+                ${track.local ? '<span class="text-[9px] bg-emerald-600/80 text-white px-1.5 py-0.5 rounded font-mono">LOCAL</span>' : ''}
+              </div>
+              <div class="text-xs text-slate-400">${track.artist} &bull; <span class="text-cyber-accent">${track.freq} MHz</span></div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3">
+            <span class="px-2 py-1 rounded bg-slate-800 text-cyber-amber font-mono text-xs">${track.timeSlot}</span>
+            <button data-action="delete" data-id="${track.id}" class="text-slate-500 hover:text-cyber-red transition p-1">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+
+        const playBtn = item.querySelector('[data-action="play"]');
+        const deleteBtn = item.querySelector('[data-action="delete"]');
+
+        playBtn.addEventListener('click', () => forcePlayStream(idx));
+        deleteBtn.addEventListener('click', () => deleteTrack(track.id));
+
+        tracksTable.appendChild(item);
+      });
+
+      lucide.createIcons();
+    }
+
+    function renderScheduleGrid() {
+      const slots = ["08:00", "12:00", "16:00", "20:00"];
+      scheduleGrid.innerHTML = '';
+
+      slots.forEach(slot => {
+        const track = liveStreams.find(t => t.timeSlot === slot);
+        const card = document.createElement('div');
+        card.className = "p-3 rounded-lg bg-slate-900 border border-slate-800 flex justify-between items-center";
+        card.innerHTML = `
+          <div>
+            <span class="font-mono text-cyber-accent font-bold">${slot}</span>
+            <div class="font-bold text-white text-xs mt-1 flex items-center space-x-1.5">
+              <span>${track ? track.title : 'Aucune piste assignée'}</span>
+              ${track && track.type === 'youtube' ? '<span class="text-[9px] bg-red-600 text-white px-1 rounded font-mono">YT</span>' : ''}
+              ${track && track.local ? '<span class="text-[9px] bg-emerald-600 text-white px-1 rounded font-mono">LOCAL</span>' : ''}
+            </div>
+            <div class="text-[10px] text-slate-400">${track ? track.artist : 'Diffusion continue aléatoire'}</div>
+          </div>
+          <span class="w-2 h-2 rounded-full ${track ? 'bg-emerald-400' : 'bg-slate-700'}"></span>
+        `;
+        scheduleGrid.appendChild(card);
+      });
+    }
+
+    function deleteTrack(id) {
+      const indexBeforeDelete = liveStreams.findIndex(t => t.id === id);
+      if (indexBeforeDelete === -1) return;
+
+      liveStreams = liveStreams.filter(t => t.id !== id);
+
+      if (liveStreams.length === 0) {
+        currentStreamIndex = 0;
+      } else if (currentStreamIndex >= liveStreams.length) {
+        currentStreamIndex = liveStreams.length - 1;
+      } else if (indexBeforeDelete <= currentStreamIndex) {
+        currentStreamIndex = Math.max(0, currentStreamIndex - 1);
+      }
+
+      if (isPoweredOn && liveStreams.length) {
+        playCurrentStream();
+      }
+
+      renderTracksList();
+      renderScheduleGrid();
+    }
+
+    function setupEventListeners() {
+      masterPowerBtn.addEventListener('click', togglePower);
+
+      audio.addEventListener('ended', () => {
+        if (!isPoweredOn || !liveStreams.length) return;
+        currentStreamIndex = (currentStreamIndex + 1) % liveStreams.length;
+        playCurrentStream();
+      });
+
+      audio.addEventListener('error', () => {
+        if (!isPoweredOn || !liveStreams.length) return;
+        currentStreamIndex = (currentStreamIndex + 1) % liveStreams.length;
+        playCurrentStream();
+      });
+
+      const startDrag = (e) => {
+        isDraggingKnob = true;
+        startY = e.touches ? e.touches[0].clientY : e.clientY;
       };
-      request.onsuccess = (event) => {
-        db = event.target.result;
-        resolve(db);
+
+      const doDrag = (e) => {
+        if (!isDraggingKnob) return;
+        const currentY = e.touches ? e.touches[0].clientY : e.clientY;
+        const deltaY = startY - currentY;
+        startY = currentY;
+
+        volumeLevel = Math.min(Math.max(volumeLevel + deltaY * 0.008, 0), 1);
+        updateKnobRotation();
       };
-      request.onerror = (event) => reject(event.target.error);
-    });
-  }
 
-  async function dbPut(username, data) {
-    if (!db) await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction('users', 'readwrite');
-      const store = tx.objectStore('users');
-      const req = store.put({ username, ...data });
-      req.onsuccess = () => resolve();
-      req.onerror = (e) => reject(e);
-    });
-  }
-
-  async function dbGet(username) {
-    if (!db) await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction('users', 'readonly');
-      const store = tx.objectStore('users');
-      const req = store.get(username);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = (e) => reject(e);
-    });
-  }
-
-  async function dbGetAllUsers() {
-    if (!db) await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction('users', 'readonly');
-      const store = tx.objectStore('users');
-      const req = store.getAll();
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = (e) => reject(e);
-    });
-  }
-
-  async function migrateFromLocalStorage() {
-    const oldUsers = JSON.parse(localStorage.getItem('solo_users_list') || '[]');
-    for (const username of oldUsers) {
-      const authData = JSON.parse(localStorage.getItem('solo_user_auth_' + username) || 'null');
-      const gameData = JSON.parse(localStorage.getItem('solo_user_data_' + username) || 'null');
-      if (authData && gameData) {
-        await dbPut(username, { auth: authData, game: gameData });
-      }
-    }
-    localStorage.removeItem('solo_users_list');
-    for (const username of oldUsers) {
-      localStorage.removeItem('solo_user_auth_' + username);
-      localStorage.removeItem('solo_user_data_' + username);
-    }
-  }
-
-  // ========== HASH PASSWORD ==========
-  async function hashPassword(password) {
-    const msgUint8 = new TextEncoder().encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
-  }
-
-  // ========== UTILISATEUR COURANT ==========
-  let currentUser = { username: null, auth: null, game: null };
-
-  async function loadActiveSession() {
-    const activeUser = localStorage.getItem('solo_active_user');
-    if (activeUser) {
-      const user = await dbGet(activeUser);
-      if (user) {
-        currentUser.username = activeUser;
-        currentUser.auth = user.auth;
-        currentUser.game = user.game;
-        applyUserTheme(); // appliquer le thème sauvegardé
-        return true;
-      }
-    }
-    return false;
-  }
-
-  function setActiveSession(username) {
-    localStorage.setItem('solo_active_user', username);
-    currentUser.username = username;
-  }
-
-  async function clearActiveSession() {
-    localStorage.removeItem('solo_active_user');
-    currentUser.username = null;
-    currentUser.auth = null;
-    currentUser.game = null;
-  }
-
-  function game() { return currentUser.game; }
-
-  async function saveCurrentGame() {
-    if (currentUser.username && currentUser.game) {
-      await dbPut(currentUser.username, { auth: currentUser.auth, game: currentUser.game });
-    }
-  }
-
-  // ========== THÈME (NOUVEAU) ==========
-  function applyUserTheme() {
-    if (!currentUser.game) return;
-    const theme = currentUser.game.theme || 'dark';
-    const customColor = currentUser.game.customColor || null;
-
-    if (theme === 'light') {
-      document.body.classList.add('light-mode');
-    } else {
-      document.body.classList.remove('light-mode');
-    }
-
-    if (customColor) {
-      document.documentElement.style.setProperty('--bg-primary', customColor);
-      // Ajuster la couleur secondaire automatiquement (un peu plus claire)
-      document.documentElement.style.setProperty('--bg-secondary', lightenColor(customColor, 15));
-    } else {
-      document.documentElement.style.removeProperty('--bg-primary');
-      document.documentElement.style.removeProperty('--bg-secondary');
-    }
-
-    // Mettre à jour l'interface des paramètres (si on est dessus)
-    const toggle = document.getElementById('theme-toggle');
-    if (toggle) toggle.checked = (theme === 'light');
-    const picker = document.getElementById('bg-color-picker');
-    if (picker) picker.value = customColor || '#0d0221';
-  }
-
-  // Fonction utilitaire pour éclaircir une couleur hex
-  function lightenColor(hex, percent) {
-    const num = parseInt(hex.replace('#', ''), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = Math.min(255, (num >> 16) + amt);
-    const G = Math.min(255, ((num >> 8) & 0x00FF) + amt);
-    const B = Math.min(255, (num & 0x0000FF) + amt);
-    return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
-  }
-
-  // ========== AUTHENTIFICATION ==========
-  const authScreen = document.getElementById('auth-screen');
-  const mainApp = document.getElementById('main-app');
-  const authFields = document.getElementById('auth-fields');
-  const authError = document.getElementById('auth-error');
-  const authActionBtn = document.getElementById('auth-action-btn');
-  const authSwitchBtn = document.getElementById('auth-switch-btn');
-  const authSubtitle = document.getElementById('auth-subtitle');
-
-  let authMode = 'login';
-
-  function renderAuthFields() {
-    authFields.innerHTML = '';
-    if (authMode === 'login') {
-      authFields.innerHTML = `
-        <label>Nom d'utilisateur</label>
-        <input type="text" id="auth-username" placeholder="Votre identifiant" maxlength="20">
-        <label>Mot de passe</label>
-        <input type="password" id="auth-password" placeholder="Votre mot de passe" maxlength="20">
-      `;
-      authActionBtn.textContent = 'Se connecter';
-      authSubtitle.textContent = 'Connectez-vous à votre compte';
-      authSwitchBtn.textContent = 'Créer un compte';
-    } else {
-      authFields.innerHTML = `
-        <label>Nom complet</label>
-        <input type="text" id="auth-name" placeholder="Votre nom" maxlength="20">
-        <label>Âge</label>
-        <input type="number" id="auth-age" placeholder="Votre âge" min="1" max="150">
-        <label>Nom d'utilisateur</label>
-        <input type="text" id="auth-username" placeholder="Choisissez un identifiant" maxlength="20">
-        <label>Mot de passe</label>
-        <input type="password" id="auth-password" placeholder="Choisissez un mot de passe" maxlength="20">
-      `;
-      authActionBtn.textContent = 'Créer le compte';
-      authSubtitle.textContent = 'Rejoignez le Système';
-      authSwitchBtn.textContent = 'J\'ai déjà un compte';
-    }
-    authError.style.display = 'none';
-  }
-
-  authSwitchBtn.addEventListener('click', () => { authMode = (authMode === 'login') ? 'register' : 'login'; renderAuthFields(); });
-
-  authActionBtn.addEventListener('click', async () => {
-    authError.style.display = 'none';
-    if (authMode === 'login') {
-      const username = document.getElementById('auth-username')?.value.trim();
-      const password = document.getElementById('auth-password')?.value;
-      if (!username || !password) { authError.textContent = 'Champs requis.'; authError.style.display = 'block'; return; }
-      const user = await dbGet(username);
-      if (!user || !user.auth) { authError.textContent = 'Identifiant incorrect.'; authError.style.display = 'block'; return; }
-      const hashedInput = await hashPassword(password);
-      if (user.auth.password !== hashedInput) { authError.textContent = 'Mot de passe incorrect.'; authError.style.display = 'block'; return; }
-      await loginUser(username);
-    } else {
-      const name = document.getElementById('auth-name')?.value.trim();
-      const age = parseInt(document.getElementById('auth-age')?.value);
-      const username = document.getElementById('auth-username')?.value.trim();
-      const password = document.getElementById('auth-password')?.value;
-      if (!name || isNaN(age) || age <= 0 || !username || !password) { authError.textContent = 'Champs invalides.'; authError.style.display = 'block'; return; }
-      const exists = await dbGet(username);
-      if (exists) { authError.textContent = 'Cet utilisateur existe déjà.'; authError.style.display = 'block'; return; }
-      const hashedPwd = await hashPassword(password);
-      const authData = { password: hashedPwd, name, age, inscriptionDate: new Date().toISOString().split('T')[0] };
-      const defaultGameData = {
-        level: 1, xp: 0, xpToNext: 100, pointsToDistribute: 0,
-        force: 10, intelligence: 10, agility: 10, vitality: 10, perception: 10,
-        quests: [],
-        inventory: [
-          { id: 'pot_str', name: 'Potion de Force', desc: '+2 Force', effect: { stat: 'force', value: 2 }, quantity: 2 },
-          { id: 'pot_int', name: 'Parchemin d\'Intelligence', desc: '+3 Intelligence', effect: { stat: 'intelligence', value: 3 }, quantity: 1 },
-          { id: 'exp_book', name: 'Livre d\'entraînement', desc: '+50 XP', effect: { xp: 50 }, quantity: 1 },
-          { id: 'vital_herb', name: 'Herbe de Vitalité', desc: '+1 Vitalité', effect: { stat: 'vitality', value: 1 }, quantity: 3 }
-        ],
-        lastQuestDate: null, lastQuizDate: null, quizAnsweredToday: false, currentQuiz: null,
-        theme: 'dark', customColor: null   // thème par défaut
+      const stopDrag = () => {
+        isDraggingKnob = false;
       };
-      await dbPut(username, { auth: authData, game: defaultGameData });
-      await loginUser(username);
+
+      volumeKnob.addEventListener('mousedown', startDrag);
+      window.addEventListener('mousemove', doDrag);
+      window.addEventListener('mouseup', stopDrag);
+
+      volumeKnob.addEventListener('touchstart', startDrag);
+      window.addEventListener('touchmove', doDrag);
+      window.addEventListener('touchend', stopDrag);
+
+      openAdminBtn.addEventListener('click', () => {
+        if (isAdminUnlocked) {
+          adminModal.classList.remove('hidden');
+        } else {
+          authPassword.value = '';
+          authError.classList.add('hidden');
+          authModal.classList.remove('hidden');
+          authPassword.focus();
+        }
+      });
+
+      closeAuthBtn.addEventListener('click', () => authModal.classList.add('hidden'));
+
+      authForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (authPassword.value === DEFAULT_PASSWORD) {
+          isAdminUnlocked = true;
+          authModal.classList.add('hidden');
+          adminModal.classList.remove('hidden');
+        } else {
+          authError.classList.remove('hidden');
+          authPassword.value = '';
+          authPassword.focus();
+        }
+      });
+
+      closeAdminBtn.addEventListener('click', () => adminModal.classList.add('hidden'));
+
+      tabLibrary.addEventListener('click', () => {
+        tabLibrary.className = "py-3 px-4 border-b-2 border-cyber-accent text-cyber-accent font-bold flex items-center space-x-2";
+        tabSchedule.className = "py-3 px-4 border-b-2 border-transparent text-slate-400 hover:text-white flex items-center space-x-2";
+        sectionLibrary.classList.remove('hidden');
+        sectionSchedule.classList.add('hidden');
+      });
+
+      tabSchedule.addEventListener('click', () => {
+        tabSchedule.className = "py-3 px-4 border-b-2 border-cyber-accent text-cyber-accent font-bold flex items-center space-x-2";
+        tabLibrary.className = "py-3 px-4 border-b-2 border-transparent text-slate-400 hover:text-white flex items-center space-x-2";
+        sectionSchedule.classList.remove('hidden');
+        sectionLibrary.classList.add('hidden');
+      });
+
+      addTrackForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const title = document.getElementById('input-title').value.trim();
+        const artist = document.getElementById('input-artist').value.trim();
+        const urlInput = document.getElementById('input-url').value.trim();
+        const selectedLocalFile = inputLocalFile.files && inputLocalFile.files[0];
+
+        if (!title || !artist) return;
+
+        let finalUrl = urlInput;
+        let finalType = 'audio';
+        let youtubeId = null;
+        let localLabel = '';
+
+        if (selectedLocalFile) {
+          finalUrl = URL.createObjectURL(selectedLocalFile);
+          finalType = 'audio';
+          localLabel = 'LOCAL';
+        } else if (urlInput) {
+          youtubeId = extractYouTubeId(urlInput);
+          finalType = youtubeId ? 'youtube' : 'audio';
+          finalUrl = urlInput;
+        } else {
+          return;
+        }
+
+        const newTrack = {
+          id: Date.now(),
+          title,
+          artist: artist || 'Fichier local',
+          url: finalUrl,
+          type: finalType,
+          youtubeId,
+          timeSlot: document.getElementById('input-slot').value,
+          freq: document.getElementById('input-freq').value || '107.9',
+          local: !!selectedLocalFile,
+          localLabel
+        };
+
+        liveStreams.push(newTrack);
+        renderTracksList();
+        renderScheduleGrid();
+        addTrackForm.reset();
+      });
+
+      btnJingle.addEventListener('click', () => {
+        playStaticNoise();
+        alert("📢 [RÉGIE LIVE] Jingle Antenne RegaRega diffusé en priorité !");
+      });
     }
-  });
-
-  async function loginUser(username) {
-    setActiveSession(username);
-    const user = await dbGet(username);
-    currentUser.auth = user.auth;
-    currentUser.game = user.game;
-    // S'assurer que les propriétés de thème existent (migration)
-    if (currentUser.game.theme === undefined) currentUser.game.theme = 'dark';
-    if (currentUser.game.customColor === undefined) currentUser.game.customColor = null;
-    applyUserTheme();
-    checkAndGenerateQuests();
-    authScreen.style.display = 'none';
-    mainApp.style.display = 'block';
-    refreshUI();
-  }
-
-  document.getElementById('logout-btn').addEventListener('click', async () => {
-    if (confirm('Se déconnecter ?')) {
-      await saveCurrentGame();
-      await clearActiveSession();
-      mainApp.style.display = 'none';
-      authScreen.style.display = 'flex';
-      renderAuthFields();
-    }
-  });
-
-  // ========== EXPORT/IMPORT ==========
-  document.getElementById('export-data').addEventListener('click', async () => {
-    if (!currentUser.username) return;
-    await saveCurrentGame();
-    const exportObj = { username: currentUser.username, auth: currentUser.auth, game: currentUser.game };
-    const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `solo_leveling_save_${currentUser.username}.json`; a.click();
-    URL.revokeObjectURL(url);
-    showToast('💾 Sauvegarde exportée.');
-  });
-
-  document.getElementById('import-data').addEventListener('click', () => document.getElementById('import-file').click());
-  document.getElementById('import-file').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-      const text = await file.text();
-      const imported = JSON.parse(text);
-      if (!imported.username || !imported.auth || !imported.game) throw new Error('Format invalide');
-      const existing = await dbGet(imported.username);
-      if (existing && existing.username !== currentUser.username) {
-        if (!confirm(`L'utilisateur "${imported.username}" existe. Écraser ?`)) return;
-      }
-      await dbPut(imported.username, { auth: imported.auth, game: imported.game });
-      if (imported.username === currentUser.username) {
-        currentUser.auth = imported.auth; currentUser.game = imported.game;
-        applyUserTheme(); refreshUI();
-      }
-      showToast('📂 Sauvegarde restaurée.');
-    } catch (err) { alert('Fichier invalide.'); }
-    e.target.value = '';
-  });
-
-  // ========== PARAMÈTRES (NOUVEAU) ==========
-  document.getElementById('save-settings-btn').addEventListener('click', async () => {
-    if (!currentUser.game) return;
-    const themeToggle = document.getElementById('theme-toggle');
-    const colorPicker = document.getElementById('bg-color-picker');
-    currentUser.game.theme = themeToggle.checked ? 'light' : 'dark';
-    currentUser.game.customColor = colorPicker.value !== '#0d0221' ? colorPicker.value : null;
-    await saveCurrentGame();
-    applyUserTheme();
-    showToast('⚙️ Préférences enregistrées.');
-  });
-
-  document.getElementById('reset-color-btn').addEventListener('click', () => {
-    document.getElementById('bg-color-picker').value = '#0d0221';
-  });
-
-  // ========== TOAST ==========
-  function showToast(message) {
-    const toast = document.getElementById('toast');
-    toast.textContent = message; toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2000);
-  }
-
-  // ========== GÉNÉRATEUR DE QUÊTES (inchangé) ==========
-  const bookTitles = [
-    "L'Ombre du Chasseur", "Le Grimoire des Anciens", "Solo Leveling Tome 1",
-    "L'Art de la Guerre", "Méditations", "Le Pouvoir du Maintenant",
-    "Réfléchissez et devenez riche", "Le Guide du Ranger", "L'Éveil du Héros",
-    "Les Secrets du Donjon", "Légendes d'Aria", "La Voie du Guerrier"
-  ];
-
-  function generateDailyQuests(level, count = 4) {
-    const quests = [];
-    const today = new Date().toISOString().split('T')[0];
-    const seed = today + level + Math.random();
-    function seededRandom(seed) {
-      let hash = 0;
-      for (let i = 0; i < seed.length; i++) { hash = ((hash << 5) - hash) + seed.charCodeAt(i); hash |= 0; }
-      return function() { hash = (hash * 9301 + 49297) % 233280; return hash / 233280; };
-    }
-    const random = seededRandom(seed);
-    const questTypes = [
-      { title: () => `Lire "${bookTitles[Math.floor(random() * bookTitles.length)]}" (${10 + level * 2} pages)`, xp: () => 10 + level * 2 },
-      { title: () => `Marcher ${200 + level * 50} mètres`, xp: () => 5 + level },
-      { title: () => `Faire ${10 + level * 5} pompes`, xp: () => 8 + level * 2 },
-      { title: () => `Méditer ${5 + level} minutes`, xp: () => 6 + level },
-      { title: () => `Faire ${15 + level * 8} squats`, xp: () => 8 + level * 2 },
-      { title: () => `Écrire un journal de ${50 + level * 20} mots`, xp: () => 7 + level * 2 },
-      { title: () => "Boire 2 litres d'eau", xp: () => 3 + Math.floor(level / 2) },
-      { title: () => `Étirement / yoga ${10 + level * 2} min`, xp: () => 5 + level }
-    ];
-    const usedIndices = new Set();
-    while (quests.length < count) {
-      const idx = Math.floor(random() * questTypes.length);
-      if (!usedIndices.has(idx)) {
-        usedIndices.add(idx);
-        const q = questTypes[idx];
-        quests.push({ id: `q_${today}_${idx}_${Date.now()}_${Math.random()}`, title: q.title(), xpReward: q.xp(), done: false });
-      }
-    }
-    return quests;
-  }
-
-  function generateSingleQuest(level) {
-    const today = new Date().toISOString().split('T')[0];
-    const seed = today + level + Date.now();
-    const random = (() => {
-      let h = 0; for (let i = 0; i < seed.length; i++) h = ((h << 5) - h) + seed.charCodeAt(i);
-      return () => { h = (h * 9301 + 49297) % 233280; return h / 233280; };
-    })();
-    const questTypes = [
-      { title: () => `Lire "${bookTitles[Math.floor(random() * bookTitles.length)]}" (${10 + level * 2} pages)`, xp: () => 10 + level * 2 },
-      { title: () => `Marcher ${200 + level * 50} mètres`, xp: () => 5 + level },
-      { title: () => `Faire ${10 + level * 5} pompes`, xp: () => 8 + level * 2 },
-      { title: () => `Méditer ${5 + level} minutes`, xp: () => 6 + level },
-      { title: () => `Faire ${15 + level * 8} squats`, xp: () => 8 + level * 2 },
-      { title: () => `Écrire un journal de ${50 + level * 20} mots`, xp: () => 7 + level * 2 },
-      { title: () => "Boire 2 litres d'eau", xp: () => 3 + Math.floor(level / 2) },
-      { title: () => `Étirement / yoga ${10 + level * 2} min`, xp: () => 5 + level }
-    ];
-    const idx = Math.floor(random() * questTypes.length);
-    const q = questTypes[idx];
-    return { id: `q_${today}_${idx}_${Date.now()}_${Math.random()}`, title: q.title(), xpReward: q.xp(), done: false };
-  }
-
-  function checkAndGenerateQuests() {
-    if (!game()) return;
-    const today = new Date().toISOString().split('T')[0];
-    if (game().lastQuestDate !== today || !game().quests || game().quests.length === 0) {
-      game().quests = generateDailyQuests(game().level, 4);
-      game().lastQuestDate = today;
-      saveCurrentGame();
-    }
-  }
-
-  // ========== TIMER ==========
-  function updateDailyTimer() {
-    const now = new Date();
-    const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1); tomorrow.setHours(0,0,0,0);
-    const diff = tomorrow - now;
-    if (diff <= 0) { if (game()) { checkAndGenerateQuests(); refreshUI(); } return; }
-    const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
-    document.getElementById('timer-countdown').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  }
-
-  setInterval(() => {
-    if (currentUser.username && game()) {
-      updateDailyTimer();
-      const today = new Date().toISOString().split('T')[0];
-      if (game().lastQuestDate !== today) { checkAndGenerateQuests(); refreshUI(); }
-      if (game().lastQuizDate !== today) { game().quizAnsweredToday = false; game().lastQuizDate = today; saveCurrentGame(); if (document.getElementById('page-inventory').classList.contains('active')) refreshQuizUI(); }
-    }
-  }, 1000);
-
-  // ========== QUÊTES ==========
-  function completeQuest(questId) {
-    if (!game()) return;
-    const idx = game().quests.findIndex(q => q.id === questId);
-    if (idx === -1 || game().quests[idx].done) return;
-    const quest = game().quests[idx]; game().quests.splice(idx, 1);
-    game().quests.push(generateSingleQuest(game().level));
-    addXp(quest.xpReward); showToast(`✅ +${quest.xpReward} XP`); saveCurrentGame(); refreshUI();
-  }
-
-  function resetDailyQuests() {
-    if (!game()) return; game().lastQuestDate = null; checkAndGenerateQuests(); refreshUI(); showToast('🔄 Quêtes régénérées.');
-  }
-
-  function addXp(amount) {
-    game().xp += amount;
-    while (game().xp >= game().xpToNext) { game().xp -= game().xpToNext; game().level++; game().xpToNext = Math.floor(game().xpToNext * 1.2); game().pointsToDistribute += 5; }
-    saveCurrentGame(); refreshUI();
-  }
-
-  function increaseStat(stat) {
-    if (!game() || game().pointsToDistribute <= 0) return;
-    game()[stat]++; game().pointsToDistribute--; saveCurrentGame(); refreshUI();
-  }
-
-  // ========== INVENTAIRE & QUIZ ==========
-  function addItemToInventory(item) {
-    if (!game()) return;
-    const existing = game().inventory.find(i => i.id === item.id);
-    if (existing) existing.quantity += item.quantity || 1;
-    else game().inventory.push({ ...item, quantity: item.quantity || 1 });
-    saveCurrentGame();
-  }
-
-  function useItem(itemId) {
-    if (!game()) return;
-    const item = game().inventory.find(i => i.id === itemId);
-    if (!item || item.quantity <= 0) return;
-    if (item.effect.stat) { game()[item.effect.stat] += item.effect.value; showToast(`⬆️ ${item.name} +${item.effect.value}`); }
-    else if (item.effect.xp) { showToast(`📖 ${item.name} +${item.effect.xp} XP`); addXp(item.effect.xp); }
-    item.quantity--;
-    if (item.quantity <= 0) game().inventory = game().inventory.filter(i => i.id !== itemId);
-    saveCurrentGame(); refreshUI();
-  }
-
-  const quizPool = [
-    { question: "Dans Solo Leveling, quel est le nom du protagoniste ?", answers: ["Sung Jin-Woo", "Goku", "Naruto", "Eren"], correct: 0 },
-    { question: "Combien de minutes de méditation sont recommandées pour les débutants ?", answers: ["5-10 min", "1 heure", "30 min", "2 heures"], correct: 0 },
-    { question: "Quelle vitamine est produite par l'exposition au soleil ?", answers: ["Vitamine C", "Vitamine D", "Vitamine B12", "Vitamine A"], correct: 1 },
-    { question: "Que signifie le terme 'Solo Leveling' ?", answers: ["Monter de niveau seul", "Jouer en équipe", "Un manga", "Un sport"], correct: 0 },
-    { question: "Quel exercice travaille principalement les pectoraux ?", answers: ["Squat", "Pompes", "Deadlift", "Fentes"], correct: 1 },
-    { question: "Combien de pages lire par jour est un bon objectif ?", answers: ["5 pages", "20 pages", "100 pages", "500 pages"], correct: 1 }
-  ];
-
-  const rewardItems = [
-    { id: 'pot_str', name: 'Potion de Force', desc: '+2 Force', effect: { stat: 'force', value: 2 }, quantity: 1 },
-    { id: 'pot_int', name: 'Parchemin d\'Intelligence', desc: '+3 Intelligence', effect: { stat: 'intelligence', value: 3 }, quantity: 1 },
-    { id: 'exp_book', name: 'Livre d\'entraînement', desc: '+50 XP', effect: { xp: 50 }, quantity: 1 },
-    { id: 'vital_herb', name: 'Herbe de Vitalité', desc: '+1 Vitalité', effect: { stat: 'vitality', value: 1 }, quantity: 1 },
-    { id: 'agi_elixir', name: 'Élixir d\'Agilité', desc: '+2 Agilité', effect: { stat: 'agility', value: 2 }, quantity: 1 },
-    { id: 'perc_scroll', name: 'Parchemin de Perception', desc: '+2 Perception', effect: { stat: 'perception', value: 2 }, quantity: 1 }
-  ];
-
-  function loadDailyQuiz() {
-    if (!game()) return null;
-    const today = new Date().toISOString().split('T')[0];
-    let hash = 0; for (let i = 0; i < today.length; i++) hash = ((hash << 5) - hash) + today.charCodeAt(i);
-    const index = Math.abs(hash) % quizPool.length;
-    game().currentQuiz = { ...quizPool[index] };
-    return game().currentQuiz;
-  }
-
-  function refreshQuizUI() {
-    if (!game()) return;
-    const quizBox = document.getElementById('quiz-box'); if (!quizBox) return;
-    const today = new Date().toISOString().split('T')[0];
-    const alreadyAnswered = game().quizAnsweredToday && game().lastQuizDate === today;
-    const questionEl = document.getElementById('quiz-question');
-    const answersEl = document.getElementById('quiz-answers');
-    const feedbackEl = document.getElementById('quiz-feedback');
-    if (alreadyAnswered) { questionEl.textContent = "✅ Quiz déjà réussi. Revenez demain."; answersEl.innerHTML = ''; feedbackEl.textContent = ''; return; }
-    const quiz = game().currentQuiz || loadDailyQuiz();
-    questionEl.textContent = "❓ " + quiz.question;
-    answersEl.innerHTML = '';
-    quiz.answers.forEach((answer, idx) => {
-      const btn = document.createElement('button'); btn.className = 'quiz-btn'; btn.textContent = answer;
-      btn.addEventListener('click', () => handleQuizAnswer(idx));
-      answersEl.appendChild(btn);
-    });
-    feedbackEl.textContent = '';
-  }
-
-  function handleQuizAnswer(chosenIndex) {
-    if (!game()) return;
-    const today = new Date().toISOString().split('T')[0];
-    if (game().quizAnsweredToday && game().lastQuizDate === today) { showToast('Déjà répondu.'); return; }
-    const quiz = game().currentQuiz; if (!quiz) return;
-    const isCorrect = (chosenIndex === quiz.correct);
-    const feedbackEl = document.getElementById('quiz-feedback');
-    document.querySelectorAll('.quiz-btn').forEach(btn => btn.disabled = true);
-    if (isCorrect) { feedbackEl.textContent = '🎉 Bonne réponse !'; addItemToInventory(rewardItems[Math.floor(Math.random() * rewardItems.length)]); showToast('🏆 Objet reçu !'); }
-    else { feedbackEl.textContent = '❌ Mauvaise réponse.'; }
-    game().quizAnsweredToday = true; game().lastQuizDate = today; saveCurrentGame(); refreshUI();
-  }
-
-  // ========== IA ==========
-  function analyzeBuild() {
-    if (!game()) return { stat: 'force', name: 'Force' };
-    const age = currentUser.auth.age;
-    const totalStats = game().force + game().intelligence + game().agility + game().vitality + game().perception;
-    const avg = totalStats / 5;
-    let focus = age < 20 ? ['force','agility'] : age < 30 ? ['force','vitality'] : ['intelligence','vitality','perception'];
-    let recommended = focus[0]; let minVal = game()[focus[0]];
-    focus.forEach(stat => { if (game()[stat] < minVal) { minVal = game()[stat]; recommended = stat; } });
-    if (minVal > avg) { const all = ['force','intelligence','agility','vitality','perception']; recommended = all.reduce((a,b) => game()[a] < game()[b] ? a : b); }
-    const names = { force:'Force', intelligence:'Intelligence', agility:'Agilité', vitality:'Vitalité', perception:'Perception' };
-    return { stat: recommended, name: names[recommended] };
-  }
-
-  function getAiAdviceText() {
-    if (!game()) return ''; const b = analyzeBuild();
-    let a = `🧠 Analyse :\nNiv.${game().level} • ${currentUser.auth.age} ans\nRecomm. : ${b.name}\n`;
-    a += game().pointsToDistribute > 0 ? `⭐ ${game().pointsToDistribute} pts → ${b.name}\n` : 'Aucun pt.\n';
-    a += `📊 F-${game().force} I-${game().intelligence} A-${game().agility} V-${game().vitality} P-${game().perception}`;
-    return a;
-  }
-
-  function autoDistribute() {
-    if (!game() || game().pointsToDistribute <= 0) { showToast('Aucun point.'); return; }
-    const b = analyzeBuild(); game()[b.stat] += game().pointsToDistribute; const pts = game().pointsToDistribute; game().pointsToDistribute = 0;
-    saveCurrentGame(); refreshUI(); showToast(`🤖 ${pts} pts en ${b.name}`); updateAiChat(`Système : ${pts} pts alloués en ${b.name}.`);
-  }
-
-  function processAiMessage(msg) {
-    if (!game()) return '';
-    msg = msg.toLowerCase();
-    if (msg.includes('stat')||msg.includes('améliorer')) { const b=analyzeBuild(); return `Recommandé : ${b.name}. ${game().pointsToDistribute} pts dispo.`; }
-    if (msg.includes('niveau')) return `Niv.${game().level}, ${game().xpToNext - game().xp} XP pour niv.${game().level+1}.`;
-    if (msg.includes('quête')) return `Encore ${game().quests.filter(q=>!q.done).length} quête(s).`;
-    const map={force:'Force',intelligence:'Intelligence',agility:'Agilité',vitality:'Vitalité',perception:'Perception'};
-    for (let [k,v] of Object.entries(map)) if (msg.includes(k)) return `${v} : ${game()[k]}.`;
-    if (msg.includes('âge')) return `${currentUser.auth.age} ans.`;
-    if (msg.includes('inventaire')) return `${game().inventory.reduce((s,i)=>s+i.quantity,0)} objet(s).`;
-    return "Posez une question sur vos stats, quêtes, etc.";
-  }
-
-  function updateAiChat(message, sender='ai') {
-    const container = document.getElementById('chat-container');
-    if (!container) return;
-    const bubble = document.createElement('div');
-    bubble.className = sender==='user' ? 'user-bubble chat-bubble' : 'ai-bubble chat-bubble';
-    bubble.textContent = (sender==='user'?'Vous : ':'') + message;
-    container.appendChild(bubble); container.scrollTop = container.scrollHeight;
-  }
-
-  function refreshAI() {
-    if (!game()) return;
-    document.getElementById('ai-advice').innerText = getAiAdviceText();
-    document.getElementById('ai-chat-name').textContent = currentUser.auth.name || 'Chasseur';
-  }
-
-  // ========== CLASSEMENT ==========
-  async function refreshLeaderboard() {
-    const container = document.getElementById('leaderboard-container');
-    if (!container) return; container.innerHTML = '';
-    const users = await dbGetAllUsers();
-    const players = users.map(u => ({
-      username: u.username, name: u.auth.name, level: u.game.level,
-      totalStats: u.game.force+u.game.intelligence+u.game.agility+u.game.vitality+u.game.perception, xp: u.game.xp
-    }));
-    players.sort((a,b) => b.level - a.level || b.totalStats - a.totalStats);
-    if (players.length===0) { container.innerHTML = '<div style="text-align:center;opacity:0.7;">Aucun joueur.</div>'; return; }
-    players.forEach((p,i) => {
-      const row = document.createElement('div'); row.className = 'leaderboard-row';
-      let rank = i+1, icon = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':`#${rank}`;
-      row.innerHTML = `<div class="leaderboard-info"><div class="leaderboard-name">${icon} ${p.name} (@${p.username})</div><div class="leaderboard-stats">Niv.${p.level} • Stats ${p.totalStats}</div></div><div class="leaderboard-level">${p.xp} XP</div>`;
-      container.appendChild(row);
-    });
-  }
-
-  // ========== AFFICHAGE GLOBAL ==========
-  const statsLabels = {
-    force: '💪 Force', intelligence: '🧠 Intelligence', agility: '🏃 Agilité', vitality: '❤️ Vitalité', perception: '👁️ Perception'
-  };
-
-  function refreshUI() {
-    if (!currentUser.username || !game()) return;
-    document.getElementById('player-name').textContent = currentUser.auth.name;
-    document.getElementById('player-age').textContent = currentUser.auth.age ? `${currentUser.auth.age} ans` : '';
-    document.getElementById('level').textContent = game().level;
-    document.getElementById('xp').textContent = game().xp;
-    document.getElementById('xp-to-next').textContent = game().xpToNext;
-    document.getElementById('xp-fill').style.width = Math.min(100, Math.floor((game().xp / game().xpToNext) * 100)) + '%';
-
-    const pointsMsg = document.getElementById('points-msg');
-    if (game().pointsToDistribute > 0) { pointsMsg.style.display = 'block'; document.getElementById('points-val').textContent = game().pointsToDistribute; }
-    else pointsMsg.style.display = 'none';
-
-    const statsContainer = document.getElementById('stats-container');
-    statsContainer.innerHTML = '';
-    for (let [key, label] of Object.entries(statsLabels)) {
-      const row = document.createElement('div'); row.className = 'stat-row';
-      row.innerHTML = `<span class="stat-label">${label}</span><span class="stat-value">${game()[key]}</span>${game().pointsToDistribute > 0 ? '<button class="plus-btn">+</button>' : ''}`;
-      if (game().pointsToDistribute > 0) row.querySelector('.plus-btn').addEventListener('click', () => increaseStat(key));
-      statsContainer.appendChild(row);
-    }
-
-    const questsContainer = document.getElementById('quests-container'); questsContainer.innerHTML = '';
-    if (!game().quests || game().quests.length === 0) questsContainer.innerHTML = '<div style="text-align:center;opacity:0.7;">Aucune quête.</div>';
-    else game().quests.forEach(q => {
-      const card = document.createElement('div'); card.className = 'quest-card';
-      card.innerHTML = `<div class="quest-info"><span class="quest-title">${q.title}</span><span class="quest-xp">+${q.xpReward} XP</span></div><button class="validate-btn">Valider</button>`;
-      card.querySelector('.validate-btn').addEventListener('click', () => completeQuest(q.id));
-      questsContainer.appendChild(card);
-    });
-
-    const dayInfo = document.getElementById('quest-day-info');
-    if (currentUser.auth.inscriptionDate) {
-      const start = new Date(currentUser.auth.inscriptionDate); const now = new Date();
-      dayInfo.textContent = `📅 Jour ${Math.floor((now - start) / 86400000) + 1} de votre aventure`;
-    } else dayInfo.textContent = '';
-
-    const inventoryContainer = document.getElementById('inventory-container'); inventoryContainer.innerHTML = '';
-    if (game().inventory.length === 0) inventoryContainer.innerHTML = '<div style="text-align:center;opacity:0.7;">Aucun objet.</div>';
-    else game().inventory.forEach(item => {
-      const row = document.createElement('div'); row.className = 'item-row';
-      row.innerHTML = `<div class="item-info"><div class="item-name">${item.name}</div><div class="item-desc">${item.desc}</div></div><span class="item-quantity">x${item.quantity}</span><button class="use-btn">Utiliser</button>`;
-      row.querySelector('.use-btn').addEventListener('click', () => useItem(item.id));
-      inventoryContainer.appendChild(row);
-    });
-
-    if (document.getElementById('page-inventory').classList.contains('active')) refreshQuizUI();
-    refreshAI();
-    if (document.getElementById('page-leaderboard').classList.contains('active')) refreshLeaderboard();
-    updateDailyTimer();
-  }
-
-  // ========== NAVIGATION ==========
-  function setActiveTab(tabId) {
-    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
-    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-    if (tabId === 'tab-stat') document.getElementById('page-stat').classList.add('active');
-    else if (tabId === 'tab-quest') document.getElementById('page-quest').classList.add('active');
-    else if (tabId === 'tab-inventory') { document.getElementById('page-inventory').classList.add('active'); refreshQuizUI(); }
-    else if (tabId === 'tab-ai') document.getElementById('page-ai').classList.add('active');
-    else if (tabId === 'tab-leaderboard') { document.getElementById('page-leaderboard').classList.add('active'); refreshLeaderboard(); }
-    else if (tabId === 'tab-settings') {
-      document.getElementById('page-settings').classList.add('active');
-      // synchroniser l'interface des paramètres avec les valeurs actuelles
-      if (currentUser.game) {
-        document.getElementById('theme-toggle').checked = (currentUser.game.theme === 'light');
-        document.getElementById('bg-color-picker').value = currentUser.game.customColor || '#0d0221';
-      }
-    }
-  }
-
-  document.getElementById('tab-stat').addEventListener('click', () => setActiveTab('tab-stat'));
-  document.getElementById('tab-quest').addEventListener('click', () => setActiveTab('tab-quest'));
-  document.getElementById('tab-inventory').addEventListener('click', () => setActiveTab('tab-inventory'));
-  document.getElementById('tab-ai').addEventListener('click', () => setActiveTab('tab-ai'));
-  document.getElementById('tab-leaderboard').addEventListener('click', () => setActiveTab('tab-leaderboard'));
-  document.getElementById('tab-settings').addEventListener('click', () => setActiveTab('tab-settings'));
-
-  document.getElementById('reset-quests').addEventListener('click', resetDailyQuests);
-  document.getElementById('auto-distribute-btn').addEventListener('click', autoDistribute);
-
-  const chatInput = document.getElementById('chat-input');
-  const chatSend = document.getElementById('chat-send');
-  chatSend.addEventListener('click', () => {
-    const text = chatInput.value.trim(); if (!text) return;
-    updateAiChat(text, 'user');
-    const reply = processAiMessage(text); setTimeout(() => updateAiChat(reply, 'ai'), 300);
-    chatInput.value = '';
-  });
-  chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') chatSend.click(); });
-
-  // ========== INIT ==========
-  async function init() {
-    await openDB();
-    if (localStorage.getItem('solo_users_list')) await migrateFromLocalStorage();
-    const session = await loadActiveSession();
-    if (session) {
-      authScreen.style.display = 'none'; mainApp.style.display = 'block';
-      checkAndGenerateQuests(); refreshUI();
-    } else {
-      authScreen.style.display = 'flex'; mainApp.style.display = 'none'; renderAuthFields();
-    }
-  }
-  init();
-</script>
+  </script>
 </body>
 </html>
