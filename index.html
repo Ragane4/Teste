@@ -370,11 +370,11 @@
     // Playlist default live YouTube
     let liveStreams = [
       { id: 1, title: "01", artist: "YouTube", freq: "107.9", timeSlot: "08:00", url: "https://www.youtube.com/watch?v=CAbrBMKZgwg&list=RDCAbrBMKZgwg&start_radio=1", type: "youtube", youtubeId: "CAbrBMKZgwg" },
-      { id: 2, title: "02", artist: "YouTube", freq: "107.9", timeSlot: "08:00", url: "https://www.youtube.com/watch?v=CAbrBMKZgwg&list=RDCAbrBMKZgwg&start_radio=1", type: "youtube", youtubeId: "CAbrBMKZgwg" },
-      { id: 3, title: "03", artist: "YouTube", freq: "107.9", timeSlot: "12:00", url: "https://www.youtube.com/watch?v=Uk1J2dznF0k&list=RDUk1J2dznF0k&start_radio=1", type: "youtube", youtubeId: "Uk1J2dznF0k" },
-      { id: 4, title: "04", artist: "YouTube", freq: "107.9", timeSlot: "16:00", url: "https://www.youtube.com/watch?v=CAbrBMKZgwg&list=RDCAbrBMKZgwg&start_radio=1", type: "youtube", youtubeId: "CAbrBMKZgwg" },
-      { id: 5, title: "05", artist: "YouTube", freq: "107.9", timeSlot: "20:00", url: "https://www.youtube.com/watch?v=w9aIXY3rHv8&list=RDw9aIXY3rHv8&start_radio=1", type: "youtube", youtubeId: "w9aIXY3rHv8" },
-      { id: 6, title: "06", artist: "YouTube", freq: "107.9", timeSlot: "20:00", url: "https://www.youtube.com/watch?v=w9aIXY3rHv8&list=RDw9aIXY3rHv8&start_radio=1", type: "youtube", youtubeId: "w9aIXY3rHv8" }
+      { id: 2, title: "02", artist: "YouTube", freq: "107.9", timeSlot: "12:00", url: "https://www.youtube.com/watch?v=Uk1J2dznF0k&list=RDUk1J2dznF0k&start_radio=1", type: "youtube", youtubeId: "Uk1J2dznF0k" },
+      { id: 3, title: "03", artist: "YouTube", freq: "107.9", timeSlot: "16:00", url: "https://www.youtube.com/watch?v=w9aIXY3rHv8&list=RDw9aIXY3rHv8&start_radio=1", type: "youtube", youtubeId: "w9aIXY3rHv8" },
+      { id: 4, title: "04", artist: "YouTube", freq: "107.9", timeSlot: "20:00", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", type: "youtube", youtubeId: "dQw4w9WgXcQ" },
+      { id: 5, title: "05", artist: "YouTube", freq: "107.9", timeSlot: "20:00", url: "https://www.youtube.com/watch?v=ScMzIvxBSi4", type: "youtube", youtubeId: "ScMzIvxBSi4" },
+      { id: 6, title: "06", artist: "YouTube", freq: "107.9", timeSlot: "20:00", url: "https://www.youtube.com/watch?v=2Vv-BfVoR4g", type: "youtube", youtubeId: "2Vv-BfVoR4g" }
     ];
 
     let currentStreamIndex = 0;
@@ -562,7 +562,7 @@
 
     function updateVUMeter() {
       requestAnimationFrame(updateVUMeter);
-      if (!isPoweredOn) {
+      if (!isPoweredOn || isMuted) {
         vuNeedle.style.transform = 'rotate(-45deg)';
         return;
       }
