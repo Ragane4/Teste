@@ -380,7 +380,7 @@
     let currentStreamIndex = 0;
     let isPoweredOn = false;
     let isMuted = false;
-    let volumeLevel = 0.8;
+    let volumeLevel = 1;
     let isAdminUnlocked = false;
 
     // YouTube API Player reference
@@ -520,7 +520,11 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
-      audio.volume = volumeLevel;
+      isPoweredOn = false;
+      isMuted = false;
+      volumeLevel = 1;
+      audio.volume = 0;
+      applyPowerState(false);
       updateKnobRotation();
       setupEventListeners();
       renderTracksList();
@@ -620,28 +624,33 @@
       if (!liveStreams.length) return;
 
       if (!isPoweredOn) {
-        applyPowerState(true);
         isMuted = false;
+        volumeLevel = 1;
+        applyPowerState(true);
         syncMuteState();
+        updateKnobRotation();
         return;
       }
 
-      isMuted = !isMuted;
-      syncMuteState();
-
-      if (isMuted) {
+      if (!isMuted) {
+        isMuted = true;
+        syncMuteState();
         if (ytPlayer && typeof ytPlayer.mute === 'function') {
           try { ytPlayer.mute(); } catch (e) {}
         }
         if (audio && audio.paused === false) {
           audio.volume = 0;
         }
-      } else {
-        if (ytPlayer && typeof ytPlayer.unMute === 'function') {
-          try { ytPlayer.unMute(); } catch (e) {}
-        }
-        syncMuteState();
+        return;
       }
+
+      isMuted = false;
+      volumeLevel = 1;
+      if (ytPlayer && typeof ytPlayer.unMute === 'function') {
+        try { ytPlayer.unMute(); } catch (e) {}
+      }
+      syncMuteState();
+      updateKnobRotation();
     }
 
     function playCurrentStream() {
