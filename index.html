@@ -367,14 +367,18 @@
   <script>
     const DEFAULT_PASSWORD = '01010';
 
-    // Liste de flux radio FM / Chansons programmables (Support MP3 & YouTube)
-    // Vidéo YouTube sélectionnée : https://www.youtube.com/watch?v=yW_D856HRpo&list=PLVZLxjsxV69klmKGRb8WUlRDco54Sw2cS
+    // Playlist default live YouTube
     let liveStreams = [
-      { id: 1, title: "Lecture YouTube", artist: "YouTube", freq: "107.9", timeSlot: "08:00", url: "https://www.youtube.com/watch?v=yW_D856HRpo", type: "youtube", youtubeId: "yW_D856HRpo" }
+      { id: 1, title: "01", artist: "YouTube", freq: "107.9", timeSlot: "08:00", url: "https://www.youtube.com/watch?v=CAbrBMKZgwg&list=RDCAbrBMKZgwg&start_radio=1", type: "youtube", youtubeId: "CAbrBMKZgwg" },
+      { id: 2, title: "02", artist: "YouTube", freq: "107.9", timeSlot: "08:00", url: "https://www.youtube.com/watch?v=CAbrBMKZgwg&list=RDCAbrBMKZgwg&start_radio=1", type: "youtube", youtubeId: "CAbrBMKZgwg" },
+      { id: 3, title: "03", artist: "YouTube", freq: "107.9", timeSlot: "12:00", url: "https://www.youtube.com/watch?v=Uk1J2dznF0k&list=RDUk1J2dznF0k&start_radio=1", type: "youtube", youtubeId: "Uk1J2dznF0k" },
+      { id: 4, title: "04", artist: "YouTube", freq: "107.9", timeSlot: "16:00", url: "https://www.youtube.com/watch?v=CAbrBMKZgwg&list=RDCAbrBMKZgwg&start_radio=1", type: "youtube", youtubeId: "CAbrBMKZgwg" },
+      { id: 5, title: "05", artist: "YouTube", freq: "107.9", timeSlot: "20:00", url: "https://www.youtube.com/watch?v=w9aIXY3rHv8&list=RDw9aIXY3rHv8&start_radio=1", type: "youtube", youtubeId: "w9aIXY3rHv8" },
+      { id: 6, title: "06", artist: "YouTube", freq: "107.9", timeSlot: "20:00", url: "https://www.youtube.com/watch?v=w9aIXY3rHv8&list=RDw9aIXY3rHv8&start_radio=1", type: "youtube", youtubeId: "w9aIXY3rHv8" }
     ];
 
     let currentStreamIndex = 0;
-    let isPoweredOn = false;
+    let isPoweredOn = true;
     let volumeLevel = 0.8;
     let isAdminUnlocked = false;
 
@@ -464,6 +468,47 @@
       return (match && match[2].length === 11) ? match[2] : null;
     }
 
+    function applyPowerState(nextState) {
+      isPoweredOn = nextState;
+      if (nextState) {
+        initWebAudio();
+        if (audioContext && audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+
+        playStaticNoise();
+
+        powerInnerRing.className = "w-16 h-16 rounded-full bg-slate-900 border-2 border-cyber-accent flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.5)] transition duration-300";
+        powerIcon.className = "w-8 h-8 text-cyber-accent transition duration-300";
+
+        ledSignal.className = "w-3.5 h-3.5 rounded-full bg-emerald-400 border border-black shadow-[0_0_10px_#34d399]";
+        ledStereo.className = "w-3.5 h-3.5 rounded-full bg-cyber-accent border border-black shadow-[0_0_10px_#00f0ff]";
+
+        badgeOnAir.className = "px-3 py-1 rounded bg-red-600 border border-red-400 text-[11px] font-display font-bold text-white shadow-[0_0_12px_rgba(255,0,60,0.8)] animate-pulse";
+        badgeOnAir.textContent = "ON AIR";
+
+        tuningStatus.textContent = "VERROUILLÉ";
+        tuningStatus.className = "text-emerald-400 font-bold";
+
+        playCurrentStream();
+      } else {
+        audio.pause();
+        stopYouTubePlayback();
+
+        powerInnerRing.className = "w-16 h-16 rounded-full bg-slate-900 border-2 border-slate-700 flex items-center justify-center shadow-inner transition duration-300";
+        powerIcon.className = "w-8 h-8 text-slate-500 transition duration-300";
+
+        ledSignal.className = "w-3.5 h-3.5 rounded-full bg-slate-800 border border-black";
+        ledStereo.className = "w-3.5 h-3.5 rounded-full bg-slate-800 border border-black";
+
+        badgeOnAir.className = "px-3 py-1 rounded bg-slate-900 border border-white/5 text-[11px] font-display font-bold text-slate-600";
+        badgeOnAir.textContent = "OFF AIR";
+
+        tuningStatus.textContent = "STANDBY";
+        tuningStatus.className = "text-slate-600 font-bold";
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       audio.volume = volumeLevel;
@@ -471,6 +516,7 @@
       setupEventListeners();
       renderTracksList();
       renderScheduleGrid();
+      applyPowerState(true);
     });
 
     // --- Web Audio API & VU Meter Simulation ---
@@ -492,6 +538,16 @@
       updateVUMeter();
     }
 
+    function getYoutubeVisualIntensity() {
+      const time = performance.now() / 1000;
+      const basePulse = (Math.sin(time * (1.8 + currentStreamIndex * 0.7)) + 1) / 2;
+      const harmonicPulse = (Math.sin(time * (5.4 + currentStreamIndex * 1.3) + currentStreamIndex) + 1) / 2;
+      const rhythmPulse = (Math.sin(time * (9 + currentStreamIndex * 2.4) + currentStreamIndex * 1.8) + 1) / 2;
+      const volumeBias = 0.35 + volumeLevel * 0.75;
+
+      return Math.min(1, (basePulse * 0.45 + harmonicPulse * 0.35 + rhythmPulse * 0.20) * volumeBias);
+    }
+
     function updateVUMeter() {
       requestAnimationFrame(updateVUMeter);
       if (!isPoweredOn) {
@@ -507,8 +563,10 @@
         let sum = 0;
         for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
         intensity = sum / (dataArray.length * 255);
+      } else if (stream && stream.type === 'youtube') {
+        intensity = getYoutubeVisualIntensity();
       } else {
-        intensity = 0.4 + Math.random() * 0.45;
+        intensity = 0.35 + Math.random() * 0.45;
       }
 
       const angle = -45 + intensity * 90;
@@ -552,45 +610,7 @@
     // --- Power & Tuning Control ---
     function togglePower() {
       if (!liveStreams.length) return;
-      isPoweredOn = !isPoweredOn;
-
-      if (isPoweredOn) {
-        initWebAudio();
-        if (audioContext && audioContext.state === 'suspended') {
-          audioContext.resume();
-        }
-
-        playStaticNoise();
-
-        powerInnerRing.className = "w-16 h-16 rounded-full bg-slate-900 border-2 border-cyber-accent flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.5)] transition duration-300";
-        powerIcon.className = "w-8 h-8 text-cyber-accent transition duration-300";
-
-        ledSignal.className = "w-3.5 h-3.5 rounded-full bg-emerald-400 border border-black shadow-[0_0_10px_#34d399]";
-        ledStereo.className = "w-3.5 h-3.5 rounded-full bg-cyber-accent border border-black shadow-[0_0_10px_#00f0ff]";
-
-        badgeOnAir.className = "px-3 py-1 rounded bg-red-600 border border-red-400 text-[11px] font-display font-bold text-white shadow-[0_0_12px_rgba(255,0,60,0.8)] animate-pulse";
-        badgeOnAir.textContent = "ON AIR";
-
-        tuningStatus.textContent = "VERROUILLÉ";
-        tuningStatus.className = "text-emerald-400 font-bold";
-
-        playCurrentStream();
-      } else {
-        audio.pause();
-        stopYouTubePlayback();
-
-        powerInnerRing.className = "w-16 h-16 rounded-full bg-slate-900 border-2 border-slate-700 flex items-center justify-center shadow-inner transition duration-300";
-        powerIcon.className = "w-8 h-8 text-slate-500 transition duration-300";
-
-        ledSignal.className = "w-3.5 h-3.5 rounded-full bg-slate-800 border border-black";
-        ledStereo.className = "w-3.5 h-3.5 rounded-full bg-slate-800 border border-black";
-
-        badgeOnAir.className = "px-3 py-1 rounded bg-slate-900 border border-white/5 text-[11px] font-display font-bold text-slate-600";
-        badgeOnAir.textContent = "OFF AIR";
-
-        tuningStatus.textContent = "STANDBY";
-        tuningStatus.className = "text-slate-600 font-bold";
-      }
+      applyPowerState(!isPoweredOn);
     }
 
     function playCurrentStream() {
