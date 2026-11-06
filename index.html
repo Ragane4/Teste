@@ -378,7 +378,7 @@
     ];
 
     let currentStreamIndex = 0;
-    let isPoweredOn = true;
+    let isPoweredOn = false;
     let volumeLevel = 0.8;
     let isAdminUnlocked = false;
 
@@ -516,7 +516,6 @@
       setupEventListeners();
       renderTracksList();
       renderScheduleGrid();
-      applyPowerState(true);
     });
 
     // --- Web Audio API & VU Meter Simulation ---
