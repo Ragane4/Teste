@@ -379,6 +379,7 @@
 
     let currentStreamIndex = 0;
     let isPoweredOn = false;
+    let isMuted = false;
     let volumeLevel = 0.8;
     let isAdminUnlocked = false;
 
@@ -509,6 +510,14 @@
       }
     }
 
+    function syncMuteState() {
+      const effectiveVolume = isPoweredOn && !isMuted ? volumeLevel : 0;
+      audio.volume = effectiveVolume;
+      if (ytPlayer && typeof ytPlayer.setVolume === 'function') {
+        ytPlayer.setVolume(isPoweredOn && !isMuted ? volumeLevel * 100 : 0);
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       audio.volume = volumeLevel;
@@ -609,7 +618,30 @@
     // --- Power & Tuning Control ---
     function togglePower() {
       if (!liveStreams.length) return;
-      applyPowerState(!isPoweredOn);
+
+      if (!isPoweredOn) {
+        applyPowerState(true);
+        isMuted = false;
+        syncMuteState();
+        return;
+      }
+
+      isMuted = !isMuted;
+      syncMuteState();
+
+      if (isMuted) {
+        if (ytPlayer && typeof ytPlayer.mute === 'function') {
+          try { ytPlayer.mute(); } catch (e) {}
+        }
+        if (audio && audio.paused === false) {
+          audio.volume = 0;
+        }
+      } else {
+        if (ytPlayer && typeof ytPlayer.unMute === 'function') {
+          try { ytPlayer.unMute(); } catch (e) {}
+        }
+        syncMuteState();
+      }
     }
 
     function playCurrentStream() {
@@ -658,11 +690,7 @@
       const rotationAngle = -135 + (volumeLevel * 270);
       volumeKnob.style.transform = `rotate(${rotationAngle}deg)`;
       volumePercentage.textContent = `${Math.round(volumeLevel * 100)}%`;
-      
-      audio.volume = volumeLevel;
-      if (ytPlayer && typeof ytPlayer.setVolume === 'function') {
-        ytPlayer.setVolume(volumeLevel * 100);
-      }
+      syncMuteState();
     }
 
     // --- ADMIN CONTROLS, AUTH & SCHEDULER LOGIC ---
